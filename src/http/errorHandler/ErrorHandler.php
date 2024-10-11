@@ -2,7 +2,6 @@
 
 namespace Konarsky\http\errorHandler;
 
-use Konarsky\contracts\DebugTagStorageInterface;
 use Konarsky\contracts\ErrorHandlerInterface;
 
 class ErrorHandler implements ErrorHandlerInterface
@@ -21,12 +20,12 @@ class ErrorHandler implements ErrorHandlerInterface
             $statusCode = $e->getStatusCode();
             $message = $e->getMessage();
 
-            include PROJECT_ROOT . 'framework/errorHandler/views/error400.php';
+            include __DIR__ . '/../../errorHandler/views/error400.php';
 
             return ob_get_clean();
         }
 
-        include PROJECT_ROOT . 'framework/errorHandler/views/error500.php';
+        include __DIR__ . '/../../errorHandler/views/error500.php';
 
         return ob_get_clean();
     }
