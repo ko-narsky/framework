@@ -6,8 +6,6 @@ use Konarsky\contracts\ViewRendererInterface;
 
 class View implements ViewRendererInterface
 {
-    public function __construct(private string $path = __DIR__ . '/../../views/') { }
-
     /**
      * Рендер страницы
      * Пример вызова:
@@ -16,26 +14,31 @@ class View implements ViewRendererInterface
      *
      * @param string $view имя вью файла отрисовки страницы
      * @param array $params значения переменных, используемых для отрисовки представления
+     * @param object $context Контекст, из которого извлекается информация о контроллере
      * @return void
+     * @throws ViewNotFoundException
      */
     public function render(string $view, array $params, object $context): void
     {
-        $context = explode('\\', get_class($context));
+        $reflection = new \ReflectionClass($context);
 
-        if ($context[0] === 'Modules') {
-            $this->path = __DIR__ . '/../../modules/views/';
+        $path = dirname(dirname($reflection->getFileName()));
+
+        $contextParts = explode('\\',get_class($context));
+
+        $entrypoint = strtolower(str_replace('Controller', '', array_pop($contextParts)));
+
+        $file = $path
+            . DIRECTORY_SEPARATOR . 'views'
+            . DIRECTORY_SEPARATOR . $entrypoint
+            . DIRECTORY_SEPARATOR . $view . '.php';
+
+        if (!file_exists($file)) {
+            throw new ViewNotFoundException('Нет такого файла: ' . $file);
         }
-
-        $entrypoint = strtolower(str_replace('Controller', '', array_pop($context)));
 
         extract($params);
 
-        $file = $this->path . $entrypoint . '/' . $view . '.php';
-
-        if (file_exists($file) === false) {
-            throw new ViewNotFoundException('Нет такого файла');
-        }
-
-        require($file);
+        require $file;
     }
 }
