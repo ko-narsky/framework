@@ -153,6 +153,8 @@ class Router implements HTTPRouterInterface
             '',
             $this->targetForMiddleware['path']
         );
+        $this->targetForMiddleware['method'] = null;
+
         $this->methodPath = $name;
 
         return $this;
