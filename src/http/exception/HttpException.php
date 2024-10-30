@@ -2,14 +2,16 @@
 
 namespace Konarsky\http\errorHandler;
 
-class HttpException extends \Exception
-{
-    private int $statusCode;
+use Exception;
 
-    public function __construct(string $message, int $statusCode)
-    {
+class HttpException extends Exception
+{
+
+    public function __construct(
+        string $message,
+        private readonly int $statusCode
+    ) {
         parent::__construct($message);
-        $this->statusCode = $statusCode;
     }
 
     public function getStatusCode(): int

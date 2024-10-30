@@ -6,39 +6,41 @@ use Konarsky\contracts\ViewRendererInterface;
 
 class View implements ViewRendererInterface
 {
+    public function __construct(
+        private readonly string $view,
+        private array $params,
+        private readonly object $context
+    ) {
+    }
+
     /**
-     * Рендер страницы
-     * Пример вызова:
-     * Рендер страницы из файла проекта /view/site/about.php
-     * (new View())->render('about', compact('administratorName', 'companyPhone'))
-     *
-     * @param string $view имя вью файла отрисовки страницы
-     * @param array $params значения переменных, используемых для отрисовки представления
-     * @param object $context Контекст, из которого извлекается информация о контроллере
-     * @return void
+     * @inheritDoc
      * @throws ViewNotFoundException
      */
-    public function render(string $view, array $params, object $context): void
+    public function render(): string
     {
-        $reflection = new \ReflectionClass($context);
+        $reflection = new \ReflectionClass($this->context);
 
-        $path = dirname(dirname($reflection->getFileName()));
+        $path = dirname($reflection->getFileName(), 2);
 
-        $contextParts = explode('\\',get_class($context));
+        $contextParts = explode('\\', get_class($this->context));
 
         $entrypoint = strtolower(str_replace('Controller', '', array_pop($contextParts)));
 
         $file = $path
             . DIRECTORY_SEPARATOR . 'views'
             . DIRECTORY_SEPARATOR . $entrypoint
-            . DIRECTORY_SEPARATOR . $view . '.php';
+            . DIRECTORY_SEPARATOR . $this->view . '.php';
 
-        if (!file_exists($file)) {
+        if (file_exists($file) === false) {
             throw new ViewNotFoundException('Нет такого файла: ' . $file);
         }
 
-        extract($params);
+        extract($this->params);
 
-        require $file;
+        ob_start();
+        include $file;
+
+        return ob_get_clean();
     }
 }
