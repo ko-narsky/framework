@@ -1,22 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Konarsky\http;
 
 use Konarsky\contracts\ErrorHandlerInterface;
 use Konarsky\contracts\HttpKernelInterface;
 use Konarsky\contracts\HTTPRouterInterface;
 use Konarsky\contracts\LoggerInterface;
-use Konarsky\contracts\ViewRendererInterface;
 use Konarsky\http\errorHandler\HttpException;
 use Konarsky\http\response\CreateResponse;
 use Konarsky\http\response\DeleteResponse;
+use Konarsky\http\response\HtmlResponse;
 use Konarsky\http\response\JsonResponse;
 use Konarsky\http\response\UpdateResponse;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
 
-class HttpKernel implements HttpKernelInterface
+final class HttpKernel implements HttpKernelInterface
 {
     public function __construct(
         private ResponseInterface $response,
@@ -30,17 +32,22 @@ class HttpKernel implements HttpKernelInterface
     public function handle(RequestInterface $request): ResponseInterface
     {
         try {
-
             $result = $this->router->dispatch($request);
 
-            if ($result instanceof ViewRendererInterface) {
-                $this->response = $this->response->withHeader('Content-Type', 'text/html');
-                $this->response = $this->response->withBody(new Stream($result->render()));
+            if ($result instanceof HtmlResponse) {
+                $this->response = $this->response->withHeader('Content-Type', 'text/html')
+                    ->withBody(new Stream($result->body));
             }
 
             if ($result instanceof JsonResponse) {
-                $this->response = $this->response->withHeader('Content-Type', 'application/json');
-                $this->response = $this->response->withBody(new Stream($result->body));
+                $body = json_encode($result->body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+                if ((bool)$body === false) {
+                    throw new HttpException('Ошибка при формировании JSON', 400);
+                }
+
+                $this->response = $this->response->withHeader('Content-Type', 'application/json')
+                    ->withBody(new Stream($body));
             }
 
             if ($result instanceof CreateResponse) {
@@ -54,23 +61,21 @@ class HttpKernel implements HttpKernelInterface
             if ($result instanceof UpdateResponse) {
                 $this->response = $this->response->withStatus(200);
             }
-
         } catch (HttpException $e) {
             $this->response = $this->response->withStatus($e->getCode(), $e->getMessage());
             // TODO дебаг тег добавить
 
-            $this->logger->error($e, 'Ядро HTTP');
+            $this->logger->error($e->getMessage(), 'Ядро HTTP');
 
             $this->response = $this->response->withBody(new Stream($this->errorHandler->handle($e)));
 
         } catch (Throwable $e) {
             $this->response = $this->response->withStatus(500, 'Ошибка на стороне сервера');
 
-            $this->logger->error($e, 'Ядро HTTP');
+            $this->logger->error($e->getMessage(), 'Ядро HTTP');
 
             $this->response = $this->response->withBody(new Stream($this->errorHandler->handle($e)));
         } finally {
-
             return $this->response;
         }
     }

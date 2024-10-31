@@ -5,12 +5,11 @@ namespace Konarsky\contracts;
 interface ViewRendererInterface
 {
     /**
-     * Рендер страницы
-     * Пример вызова:
-     * Рендер страницы из файла проекта /view/site/about.php
-     * (new View())->render('about', compact('administratorName', 'companyPhone'))
+     * @param string $view
+     * @param array $params
+     * @param object $context
      *
      * @return string
      */
-    public function render(): string;
+    public function render(string $view, array $params, object $context): string;
 }

@@ -2,10 +2,10 @@
 
 namespace Konarsky\http\response;
 
-class JsonResponse
+class HtmlResponse
 {
     public function __construct(
-        public mixed $body,
+        public string $body,
     ) {
     }
 }

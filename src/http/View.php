@@ -3,40 +3,34 @@
 namespace Konarsky\http;
 
 use Konarsky\contracts\ViewRendererInterface;
+use ReflectionClass;
 
 class View implements ViewRendererInterface
 {
-    public function __construct(
-        private readonly string $view,
-        private array $params,
-        private readonly object $context
-    ) {
-    }
-
     /**
      * @inheritDoc
      * @throws ViewNotFoundException
      */
-    public function render(): string
+    public function render(string $view, array $params, object $context): string
     {
-        $reflection = new \ReflectionClass($this->context);
+        $reflection = new ReflectionClass($context);
 
-        $path = dirname($reflection->getFileName(), 2);
+        $path = dirname(dirname($reflection->getFileName()));
 
-        $contextParts = explode('\\', get_class($this->context));
+        $contextParts = explode('\\',get_class($context));
 
         $entrypoint = strtolower(str_replace('Controller', '', array_pop($contextParts)));
 
         $file = $path
             . DIRECTORY_SEPARATOR . 'views'
             . DIRECTORY_SEPARATOR . $entrypoint
-            . DIRECTORY_SEPARATOR . $this->view . '.php';
+            . DIRECTORY_SEPARATOR . $view . '.php';
 
         if (file_exists($file) === false) {
             throw new ViewNotFoundException('Нет такого файла: ' . $file);
         }
 
-        extract($this->params);
+        extract($params);
 
         ob_start();
         include $file;
