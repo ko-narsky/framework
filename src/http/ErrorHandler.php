@@ -1,35 +1,50 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Konarsky\http;
 
+use Konarsky\contracts\DebugTagStorageInterface;
 use Konarsky\contracts\ErrorHandlerInterface;
-use Konarsky\http\errorHandler\HttpNotFoundException;
 use Throwable;
 
-readonly class ErrorHandler implements ErrorHandlerInterface
+class ErrorHandler implements ErrorHandlerInterface
 {
+    public bool $asJson = false;
     public function __construct(
-        private string $env,
-        private bool $debug,
-        private string $debugTag
+        private readonly DebugTagStorageInterface $debugTagStorage,
     ) {
     }
 
-    public function handle(Throwable $e): string
+    public function handle(Throwable $e, bool $asJson = true): string
     {
-        ob_start();
+        $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+        $message = $e->getMessage();
+        $trace = $e->getTraceAsString();
+        // TODO Прокинуть через Configuration
+        $debug = true;
+        $debugTag = $this->debugTagStorage->getTag();
 
-        if ($e instanceof HttpNotFoundException) {
-            $statusCode = $e->getStatusCode();
-            $message = $e->getMessage();
+        if ($this->asJson === true) {
 
-            include __DIR__ . '/../errorHandler/views/error400.php';
-
-            return ob_get_clean();
+            return json_encode([
+                'message' => $message,
+                'x-debug-tag' => $debugTag,
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         }
 
-        include __DIR__ . '/../errorHandler/views/error500.php';
-
+        ob_start();
+        include __DIR__ . '/../errorHandler/views/error.php';
         return ob_get_clean();
+    }
+
+    public function asJson(): void
+    {
+        $this->asJson = true;
+    }
+
+    public function asHtml(): void
+    {
+        $this->asJson = false;
     }
 }

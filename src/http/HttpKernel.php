@@ -8,7 +8,7 @@ use Konarsky\contracts\ErrorHandlerInterface;
 use Konarsky\contracts\HttpKernelInterface;
 use Konarsky\contracts\HTTPRouterInterface;
 use Konarsky\contracts\LoggerInterface;
-use Konarsky\http\errorHandler\HttpException;
+use Konarsky\http\exception\HttpException;
 use Konarsky\http\response\CreateResponse;
 use Konarsky\http\response\DeleteResponse;
 use Konarsky\http\response\HtmlResponse;
@@ -43,7 +43,7 @@ final class HttpKernel implements HttpKernelInterface
                 $body = json_encode($result->body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
                 if ((bool)$body === false) {
-                    throw new HttpException('Ошибка при формировании JSON', 400);
+                    throw new HttpException('Ошибка при формировании JSON', 500);
                 }
 
                 $this->response = $this->response->withHeader('Content-Type', 'application/json')
@@ -62,15 +62,13 @@ final class HttpKernel implements HttpKernelInterface
                 $this->response = $this->response->withStatus(200);
             }
         } catch (HttpException $e) {
-            $this->response = $this->response->withStatus($e->getCode(), $e->getMessage());
-            // TODO дебаг тег добавить
+            $this->response = $this->response->withStatus($e->getStatusCode());
 
             $this->logger->error($e->getMessage(), 'Ядро HTTP');
 
             $this->response = $this->response->withBody(new Stream($this->errorHandler->handle($e)));
-
         } catch (Throwable $e) {
-            $this->response = $this->response->withStatus(500, 'Ошибка на стороне сервера');
+            $this->response = $this->response->withStatus(500);
 
             $this->logger->error($e->getMessage(), 'Ядро HTTP');
 
