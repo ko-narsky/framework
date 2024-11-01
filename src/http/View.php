@@ -3,24 +3,17 @@
 namespace Konarsky\http;
 
 use Konarsky\contracts\ViewRendererInterface;
+use ReflectionClass;
 
 class View implements ViewRendererInterface
 {
     /**
-     * Рендер страницы
-     * Пример вызова:
-     * Рендер страницы из файла проекта /view/site/about.php
-     * (new View())->render('about', compact('administratorName', 'companyPhone'))
-     *
-     * @param string $view имя вью файла отрисовки страницы
-     * @param array $params значения переменных, используемых для отрисовки представления
-     * @param object $context Контекст, из которого извлекается информация о контроллере
-     * @return void
+     * @inheritDoc
      * @throws ViewNotFoundException
      */
-    public function render(string $view, array $params, object $context): void
+    public function render(string $view, array $params, object $context): string
     {
-        $reflection = new \ReflectionClass($context);
+        $reflection = new ReflectionClass($context);
 
         $path = dirname(dirname($reflection->getFileName()));
 
@@ -33,12 +26,15 @@ class View implements ViewRendererInterface
             . DIRECTORY_SEPARATOR . $entrypoint
             . DIRECTORY_SEPARATOR . $view . '.php';
 
-        if (!file_exists($file)) {
+        if (file_exists($file) === false) {
             throw new ViewNotFoundException('Нет такого файла: ' . $file);
         }
 
         extract($params);
 
-        require $file;
+        ob_start();
+        include $file;
+
+        return ob_get_clean();
     }
 }

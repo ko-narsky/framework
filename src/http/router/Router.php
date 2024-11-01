@@ -3,7 +3,7 @@
 namespace Konarsky\http\router;
 
 use Konarsky\contracts\HTTPRouterInterface;
-use Konarsky\http\errorHandler\HttpNotFoundException;
+use Konarsky\http\exception\NotFoundHttpException;
 use Konarsky\middleware\MiddlewareInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\RequestInterface;
@@ -304,8 +304,9 @@ class Router implements HTTPRouterInterface
      * Диспетчеризация входящего запроса
      *
      * @param  RequestInterface $request объект запроса
+     *
      * @return mixed
-     * @throws HttpNotFoundException если маршрут не зарегистрирован в конфигурации машрутов
+     * @throws NotFoundHttpException если маршрут не зарегистрирован в конфигурации машрутов
      */
     public function dispatch(RequestInterface $request): mixed
     {
@@ -314,7 +315,7 @@ class Router implements HTTPRouterInterface
 
         // поиск конфигурации маршрута для пути входящего запроса
         if (isset($this->routes[$method][$path]) === false) {
-            throw new HttpNotFoundException('Страница не найдена', 404);
+            throw new NotFoundHttpException('Страница не найдена', 404);
         }
 
         $route = $this->routes[$method][$path];
