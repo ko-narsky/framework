@@ -13,6 +13,7 @@ class ErrorHandler implements ErrorHandlerInterface
     public bool $asJson = false;
     public function __construct(
         private readonly DebugTagStorageInterface $debugTagStorage,
+        private readonly bool $debug,
     ) {
     }
 
@@ -21,8 +22,7 @@ class ErrorHandler implements ErrorHandlerInterface
         $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
         $message = $e->getMessage();
         $trace = $e->getTraceAsString();
-        // TODO Прокинуть через Configuration
-        $debug = true;
+        $debug = $this->debug;
         $debugTag = $this->debugTagStorage->getTag();
 
         if ($this->asJson === true) {
