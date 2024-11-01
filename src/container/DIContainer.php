@@ -2,7 +2,6 @@
 
 namespace Konarsky\container;
 
-use Closure;
 use Exception;
 use LogicException;
 use Psr\Container\ContainerInterface;
@@ -134,13 +133,13 @@ class DIContainer implements ContainerInterface
      * @return object экземпляр класса с внедренными зависимостями
      * @throws Exception
      */
-    public function get(string $id): object
+    public function get(string $id, array $args = []): object
     {
         if (
             isset($this->definitions[$id]) === true
             && (is_string($this->definitions[$id]) === true || is_callable($this->definitions[$id]) === true)
         ) {
-            $this->definitions[$id] = $this->build($this->definitions[$id]);
+            $this->definitions[$id] = $this->build($this->definitions[$id], $args);
 
             return $this->definitions[$id];
         }
@@ -155,7 +154,7 @@ class DIContainer implements ContainerInterface
             isset($this->singletons[$id]) === true
             && (is_string($this->singletons[$id]) === true || is_callable($this->singletons[$id]) === true)
         ) {
-            $this->singletons[$id] = $this->build($this->singletons[$id]);
+            $this->singletons[$id] = $this->build($this->singletons[$id], $args);
 
             return $this->singletons[$id];
         }
@@ -168,7 +167,7 @@ class DIContainer implements ContainerInterface
             throw new \Exception("Контрак $id не найден");
         }
 
-        return $this->build($id);
+        return $this->build($id, $args);
     }
 
     /**
