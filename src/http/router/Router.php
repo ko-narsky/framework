@@ -2,6 +2,8 @@
 
 namespace Konarsky\http\router;
 
+use InvalidArgumentException;
+use Konarsky\contracts\ErrorMiddlewareInterface;
 use Konarsky\contracts\HTTPRouterInterface;
 use Konarsky\http\exception\NotFoundHttpException;
 use Konarsky\middleware\MiddlewareInterface;
@@ -38,7 +40,7 @@ class Router implements HTTPRouterInterface
         }
 
         if ($middleware instanceof MiddlewareInterface === false) {
-            throw new \InvalidArgumentException('Middleware должен реализовывать ' . MiddlewareInterface::class);
+            throw new InvalidArgumentException('Middleware должен реализовывать ' . MiddlewareInterface::class);
         }
 
         // зарегистрировать мидлвеер как глобальный, участвующий при каждом вызове каждого маршрута
@@ -62,12 +64,16 @@ class Router implements HTTPRouterInterface
         if (is_string($middleware)) {
             $middleware = $this->container->build($middleware);
         }
-//
-//        if ($middleware instanceof MiddlewareInterface === false) {
-//            throw new \InvalidArgumentException('Middleware должен реализовывать ' . MiddlewareInterface::class);
-//        }
 
-        $this->errorMiddlewares[] = $middleware;
+        if ($middleware instanceof ErrorMiddlewareInterface === false) {
+            throw new InvalidArgumentException('Middleware должен реализовывать ' . ErrorMiddlewareInterface::class);
+        }
+
+        $this->errorMiddlewares[] = [
+            'method' => $this->targetForMiddleware['method'] ?? null,
+            'path' => $this->targetForMiddleware['path'] ?? null,
+            'middleware' => $middleware
+        ];
 
         return $this;
     }
@@ -367,7 +373,12 @@ class Router implements HTTPRouterInterface
             return $controller->$action(...$params);
         } catch (Throwable $e) {
             foreach ($this->errorMiddlewares as $errorMiddleware) {
-                $errorMiddleware($e, $this->container->get(RequestInterface::class));
+                if (
+                    ($errorMiddleware['method'] === null || $errorMiddleware['method'] === $method)
+                    && ($errorMiddleware['path'] === null || str_contains($path, $errorMiddleware['path']) === true)
+                ) {
+                    $errorMiddleware['middleware']($e);
+                }
             }
 
             throw $e;

@@ -11,7 +11,7 @@ use Throwable;
 
 class ErrorHandler implements ErrorHandlerInterface
 {
-    private string $contentType = ContentTypes::TEXT_HTML->value;
+    private ContentTypes $contentType = ContentTypes::TEXT_HTML;
     public function __construct(
         private readonly DebugTagStorageInterface $debugTagStorage,
         private readonly bool $debug,
@@ -26,7 +26,7 @@ class ErrorHandler implements ErrorHandlerInterface
         $debug = $this->debug;
         $debugTag = $this->debugTagStorage->getTag();
 
-        if ($this->contentType === ContentTypes::APPLICATION_JSON->value) {
+        if ($this->contentType === ContentTypes::APPLICATION_JSON) {
 
             return json_encode([
                 'message' => $message,
@@ -39,8 +39,13 @@ class ErrorHandler implements ErrorHandlerInterface
         return ob_get_clean();
     }
 
-    public function setContentType(string $contentType): void
+    public function setContentType(ContentTypes $contentType): void
     {
         $this->contentType = $contentType;
+    }
+
+    public function getContentType(): ContentTypes
+    {
+        return $this->contentType;
     }
 }

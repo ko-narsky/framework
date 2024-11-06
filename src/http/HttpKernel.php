@@ -63,13 +63,15 @@ final class HttpKernel implements HttpKernelInterface
                 $this->response = $this->response->withStatus(200);
             }
         } catch (HttpException $e) {
-            $this->response = $this->response->withStatus($e->getStatusCode());
+            $this->response = $this->response->withHeader('Content-Type', $this->errorHandler->getContentType()->value)
+                ->withStatus($e->getStatusCode());
 
             $this->logger->error($e->getMessage(), 'Ядро HTTP');
 
             $this->response = $this->response->withBody(new Stream($this->errorHandler->handle($e)));
         } catch (Throwable $e) {
-            $this->response = $this->response->withStatus(500);
+            $this->response = $this->response->withHeader('Content-Type', $this->errorHandler->getContentType()->value)
+                ->withStatus(500);
 
             $this->logger->error($e->getMessage(), 'Ядро HTTP');
 
