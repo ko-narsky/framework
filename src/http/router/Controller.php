@@ -7,15 +7,15 @@ namespace Konarsky\http\router;
 use Konarsky\contracts\ViewRendererInterface;
 use Konarsky\http\response\HtmlResponse;
 
-class Controller
+abstract class Controller
 {
     public function __construct(
-        private readonly ViewRendererInterface $viewRenderer,
+        protected readonly ViewRendererInterface $viewRenderer,
     ) {
     }
 
-    protected function render(string $view, array $params = []): HtmlResponse
+    protected function render(string $view, array $params = [], string|null $viewRootDirectory = null): HtmlResponse
     {
-        return new HtmlResponse($this->viewRenderer->render($view, $params, $this));
+        return new HtmlResponse($this->viewRenderer->render($view, $params, $viewRootDirectory));
     }
 }
