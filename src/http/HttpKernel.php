@@ -8,6 +8,7 @@ use Konarsky\contracts\ErrorHandlerInterface;
 use Konarsky\contracts\HttpKernelInterface;
 use Konarsky\contracts\HTTPRouterInterface;
 use Konarsky\contracts\LoggerInterface;
+use Konarsky\http\enum\ContentTypes;
 use Konarsky\http\exception\HttpException;
 use Konarsky\http\response\CreateResponse;
 use Konarsky\http\response\DeleteResponse;
@@ -35,7 +36,7 @@ final class HttpKernel implements HttpKernelInterface
             $result = $this->router->dispatch($request);
 
             if ($result instanceof HtmlResponse) {
-                $this->response = $this->response->withHeader('Content-Type', 'text/html')
+                $this->response = $this->response->withHeader('Content-Type', ContentTypes::TEXT_HTML->value)
                     ->withBody(new Stream($result->body));
             }
 
@@ -46,7 +47,7 @@ final class HttpKernel implements HttpKernelInterface
                     throw new HttpException('Ошибка при формировании JSON', 500);
                 }
 
-                $this->response = $this->response->withHeader('Content-Type', 'application/json')
+                $this->response = $this->response->withHeader('Content-Type', ContentTypes::APPLICATION_JSON->value)
                     ->withBody(new Stream($body));
             }
 
@@ -62,13 +63,15 @@ final class HttpKernel implements HttpKernelInterface
                 $this->response = $this->response->withStatus(200);
             }
         } catch (HttpException $e) {
-            $this->response = $this->response->withStatus($e->getStatusCode());
+            $this->response = $this->response->withHeader('Content-Type', $this->errorHandler->getContentType()->value)
+                ->withStatus($e->getStatusCode());
 
             $this->logger->error($e->getMessage(), 'Ядро HTTP');
 
             $this->response = $this->response->withBody(new Stream($this->errorHandler->handle($e)));
         } catch (Throwable $e) {
-            $this->response = $this->response->withStatus(500);
+            $this->response = $this->response->withHeader('Content-Type', $this->errorHandler->getContentType()->value)
+                ->withStatus(500);
 
             $this->logger->error($e->getMessage(), 'Ядро HTTP');
 

@@ -6,18 +6,19 @@ namespace Konarsky\http;
 
 use Konarsky\contracts\DebugTagStorageInterface;
 use Konarsky\contracts\ErrorHandlerInterface;
+use Konarsky\http\enum\ContentTypes;
 use Throwable;
 
 class ErrorHandler implements ErrorHandlerInterface
 {
-    public bool $asJson = false;
+    private ContentTypes $contentType = ContentTypes::TEXT_HTML;
     public function __construct(
         private readonly DebugTagStorageInterface $debugTagStorage,
         private readonly bool $debug,
     ) {
     }
 
-    public function handle(Throwable $e, bool $asJson = true): string
+    public function handle(Throwable $e): string
     {
         $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
         $message = $e->getMessage();
@@ -25,7 +26,7 @@ class ErrorHandler implements ErrorHandlerInterface
         $debug = $this->debug;
         $debugTag = $this->debugTagStorage->getTag();
 
-        if ($this->asJson === true) {
+        if ($this->contentType === ContentTypes::APPLICATION_JSON) {
 
             return json_encode([
                 'message' => $message,
@@ -38,13 +39,13 @@ class ErrorHandler implements ErrorHandlerInterface
         return ob_get_clean();
     }
 
-    public function asJson(): void
+    public function setContentType(ContentTypes $contentType): void
     {
-        $this->asJson = true;
+        $this->contentType = $contentType;
     }
 
-    public function asHtml(): void
+    public function getContentType(): ContentTypes
     {
-        $this->asJson = false;
+        return $this->contentType;
     }
 }

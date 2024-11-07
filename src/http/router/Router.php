@@ -2,16 +2,20 @@
 
 namespace Konarsky\http\router;
 
+use InvalidArgumentException;
+use Konarsky\contracts\ErrorMiddlewareInterface;
 use Konarsky\contracts\HTTPRouterInterface;
 use Konarsky\http\exception\NotFoundHttpException;
 use Konarsky\middleware\MiddlewareInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\RequestInterface;
+use Throwable;
 
 class Router implements HTTPRouterInterface
 {
     protected array $routes = [];
     protected array $middlewares = [];
+    protected array $errorMiddlewares = [];
     protected array $prefix = [];
     protected array $targetForMiddleware;
     protected string $methodPath;
@@ -23,10 +27,12 @@ class Router implements HTTPRouterInterface
     /**
      * Регистрация глобального мидлвеера
      *
-     * @param  string|callable $middleware коллбек функция или неймспейс класса мидлвеера
-     * @return void
+     * @param string|callable $middleware коллбек функция или неймспейс класса мидлвеера
+     *
+     * @return HTTPRouterInterface
+     * @throws \ReflectionException
      */
-    public function addMiddleware(callable|string $middleware): void
+    public function addMiddleware(callable|string $middleware): HTTPRouterInterface
     {
         // Проверять неймспейс класса на соответствие MiddlewareInterface, при несоответствии выбрасывать ошибку
         if (is_string($middleware)) {
@@ -34,7 +40,7 @@ class Router implements HTTPRouterInterface
         }
 
         if ($middleware instanceof MiddlewareInterface === false) {
-            throw new \InvalidArgumentException('Middleware должен реализовывать ' . MiddlewareInterface::class);
+            throw new InvalidArgumentException('Middleware должен реализовывать ' . MiddlewareInterface::class);
         }
 
         // зарегистрировать мидлвеер как глобальный, участвующий при каждом вызове каждого маршрута
@@ -43,6 +49,33 @@ class Router implements HTTPRouterInterface
             'path' => $this->targetForMiddleware['path'] ?? null,
             'middleware' => $middleware
         ];
+
+        return $this;
+    }
+
+    /**
+     * Регистрация мидлвеера для обработки ошибок.
+     *
+     * @param callable|string $middleware
+     * @return void
+     */
+    public function addErrorMiddleware(callable|string $middleware): HTTPRouterInterface
+    {
+        if (is_string($middleware)) {
+            $middleware = $this->container->build($middleware);
+        }
+
+        if ($middleware instanceof ErrorMiddlewareInterface === false) {
+            throw new InvalidArgumentException('Middleware должен реализовывать ' . ErrorMiddlewareInterface::class);
+        }
+
+        $this->errorMiddlewares[] = [
+            'method' => $this->targetForMiddleware['method'] ?? null,
+            'path' => $this->targetForMiddleware['path'] ?? null,
+            'middleware' => $middleware
+        ];
+
+        return $this;
     }
 
     /**
@@ -313,29 +346,42 @@ class Router implements HTTPRouterInterface
         $method = $request->getMethod();
         $path = $request->getUri()->getPath();
 
-        // поиск конфигурации маршрута для пути входящего запроса
-        if (isset($this->routes[$method][$path]) === false) {
-            throw new NotFoundHttpException('Страница не найдена', 404);
-        }
-
-        $route = $this->routes[$method][$path];
-
-        // применение мидлвееров назначенных как глобальных или для группы, так и для конкретного эндпоинта
-        foreach ($this->middlewares as $middleware) {
-            if (
-                ($middleware['method'] === null || $middleware['method'] === $method)
-                && ($middleware['path'] === null || str_contains($path, $middleware['path']) === true)
-            ) {
-                $middleware['middleware']($this->container->get(RequestInterface::class));
+        try {
+            // поиск конфигурации маршрута для пути входящего запроса
+            if (isset($this->routes[$method][$path]) === false) {
+                throw new NotFoundHttpException('Страница не найдена', 404);
             }
+
+            $route = $this->routes[$method][$path];
+
+            // применение мидлвееров назначенных как глобальных или для группы, так и для конкретного эндпоинта
+            foreach ($this->middlewares as $middleware) {
+                if (
+                    ($middleware['method'] === null || $middleware['method'] === $method)
+                    && ($middleware['path'] === null || str_contains($path, $middleware['path']) === true)
+                ) {
+                    $middleware['middleware']($this->container->get(RequestInterface::class));
+                }
+            }
+
+            $params = $this->mapParams($request->getQueryParams(), $route->params);
+
+            // вызов обработчика с передачей параметров из запроса
+            $controller = $this->container->get($route->handler);
+            $action = $route->action;
+
+            return $controller->$action(...$params);
+        } catch (Throwable $e) {
+            foreach ($this->errorMiddlewares as $errorMiddleware) {
+                if (
+                    ($errorMiddleware['method'] === null || $errorMiddleware['method'] === $method)
+                    && ($errorMiddleware['path'] === null || str_contains($path, $errorMiddleware['path']) === true)
+                ) {
+                    $errorMiddleware['middleware']($e);
+                }
+            }
+
+            throw $e;
         }
-
-        $params = $this->mapParams($request->getQueryParams(), $route->params);
-
-        // вызов обработчика с передачей параметров из запроса
-        $controller = $this->container->get($route->handler);
-        $action = $route->action;
-
-        return $controller->$action(...$params);
     }
 }
