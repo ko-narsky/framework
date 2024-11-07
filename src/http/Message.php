@@ -46,6 +46,10 @@ class Message implements MessageInterface
     {
         $header = strtolower($name);
 
+        if (isset($this->headerNames[$header]) === false) {
+            return [];
+        }
+
         return $this->headers[$this->headerNames[$header]] ?? [];
     }
 
@@ -118,5 +122,17 @@ class Message implements MessageInterface
         $clone = clone $this;
         $clone->body = $body;
         return $clone;
+    }
+
+    private function setHeaders(): void
+    {
+        foreach ($_SERVER as $name => $value) {
+            if (preg_match('/^HTTP_/',$name)) {
+                $name = strtr(substr($name,5), '_', ' ');
+                $name = ucwords(strtolower($name));
+                $name = strtr($name, ' ', '-');
+                $this->headers[$name][] = $value;
+            }
+        }
     }
 }
