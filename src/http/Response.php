@@ -48,8 +48,21 @@ class Response extends Message implements ResponseInterface
         return $this->reasonPhrase;
     }
 
-    public function send()
+    public function send(): void
     {
+        header(sprintf(
+            'HTTP/%s %d %s',
+            $this->getProtocolVersion(),
+            $this->getStatusCode(),
+            $this->getReasonPhrase()
+        ));
+
+        foreach ($this->getHeaders() as $name => $values) {
+            foreach ($values as $value) {
+                header(sprintf('%s: %s', $name, $value), false);
+            }
+        }
+
         echo $this->getBody();
     }
 }
