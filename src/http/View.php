@@ -8,6 +8,7 @@ use Konarsky\http\exception\NotFoundHttpException;
 class View implements ViewRendererInterface
 {
     private string|null $viewRootDirectory = null;
+    private string|null $extension = '.php';
 
     public function __construct(
         private readonly array $config = []
@@ -31,7 +32,7 @@ class View implements ViewRendererInterface
             $directory = $this->config[$this->viewRootDirectory];
         }
 
-        $file = $directory . DIRECTORY_SEPARATOR . $view . '.php';
+        $file = $directory . DIRECTORY_SEPARATOR . $view . $this->extension;
 
         if (file_exists($file) === false) {
             throw new NotFoundHttpException('Файл ' . $file .' не найден');
@@ -52,5 +53,10 @@ class View implements ViewRendererInterface
     public function setDefaultDirectory(string $directoryAlias): void
     {
         $this->viewRootDirectory = $directoryAlias;
+    }
+
+    public function setExtension(?string $extension): void
+    {
+        $this->extension = $extension;
     }
 }
