@@ -3,6 +3,7 @@
 namespace Konarsky\http;
 
 use Konarsky\contracts\ViewRendererInterface;
+use Konarsky\exception\viewRenderer\ViewNotFoundException;
 use Konarsky\http\exception\NotFoundHttpException;
 
 class View implements ViewRendererInterface
@@ -30,7 +31,27 @@ class View implements ViewRendererInterface
         $file = $directory . DIRECTORY_SEPARATOR . $view . '.php';
 
         if (file_exists($file) === false) {
-            throw new NotFoundHttpException('Файл ' . $file .' не найден');
+            throw new ViewNotFoundException('Файл view не найден');
+        }
+
+        extract($params);
+
+        ob_start();
+
+        include $file;
+
+        return ob_get_clean();
+    }
+
+    /**
+     * @inheritDoc
+     *
+     * @throws ViewNotFoundException
+     */
+    public function renderFromFile(string $file, array $params = []): string
+    {
+        if (file_exists($file) === false) {
+            throw new ViewNotFoundException('Файл ' . $file .' не найден');
         }
 
         extract($params);

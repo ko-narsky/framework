@@ -13,6 +13,14 @@ interface ViewRendererInterface
     public function render(string $view, array $params): string;
 
     /**
+     * @param string $file
+     * @param array $params
+     *
+     * @return string
+     */
+    public function renderFromFile(string $file, array $params = []): string;
+
+    /**
      * @param string $directoryAlias
      *
      * @return void
