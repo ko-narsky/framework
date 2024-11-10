@@ -2,8 +2,6 @@
 
 namespace Konarsky\http;
 
-use Konarsky\http\enum\ContentTypes;
-use Konarsky\http\exception\BadRequestHttpException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
@@ -24,9 +22,6 @@ class ServerRequest extends Request implements ServerRequestInterface
         private array $serverParams = []
     ) {
         parent::__construct($method, $uri, $headers, $body, $protocolVersion);
-
-        $this->setQueryParamsFormString($uri->getQuery());
-        $this->setParsedBody();
     }
 
     public function getServerParams(): array
@@ -45,19 +40,6 @@ class ServerRequest extends Request implements ServerRequestInterface
         $clone->cookieParams = $cookies;
 
         return $clone;
-    }
-
-    public function setQueryParamsFormString($queryParams): void
-    {
-        if ($queryParams === '') {
-            return;
-        }
-
-        $queryGroupParams = explode('&', $queryParams);
-        foreach ($queryGroupParams as $queryParam) {
-            $param = explode('=', $queryParam);
-            $this->queryParams[urldecode($param[0])] = urldecode($param[1]);
-        }
     }
 
     public function getQueryParams(): array
@@ -131,40 +113,5 @@ class ServerRequest extends Request implements ServerRequestInterface
         unset($clone->attributes[$name]);
 
         return $clone;
-    }
-
-    private function setParsedBody(): void
-    {
-        $this->parsedBody = [];
-
-        $contentType = $this->getHeader('Content-Type')[0] ?? null;
-
-        if ($contentType === null) {
-            return;
-        }
-
-        if ($contentType === ContentTypes::APPLICATION_JSON->value) {
-            $this->parsedBody = json_decode(file_get_contents('php://input'), true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new BadRequestHttpException('Ошибка при декодировании JSON: ' . json_last_error_msg());
-            }
-
-            return;
-        }
-
-        if ($contentType === ContentTypes::APPLICATION_X_WWW_FORM_URLENCODED->value) {
-            $this->parsedBody = $_POST;
-
-            return;
-        }
-
-        if ($contentType === ContentTypes::MULTIPART_FORM_DATA->value) {
-            $this->parsedBody = $_POST;
-
-            return;
-        }
-
-        throw new BadRequestHttpException("Неподдерживаемый тип Content-Type: $contentType");
     }
 }
