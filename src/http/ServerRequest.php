@@ -135,16 +135,16 @@ class ServerRequest extends Request implements ServerRequestInterface
 
     private function setParsedBody(): void
     {
+        $this->parsedBody = [];
+
         $contentType = $this->getHeader('Content-Type')[0] ?? null;
 
-        if ($contentType === null)
-        {
+        if ($contentType === null) {
             return;
         }
 
-        if ($contentType === ContentTypes::APPLICATION_JSON->value)
-        {
-            $this->parsedBody =  json_decode(file_get_contents('php://input'), true);
+        if ($contentType === ContentTypes::APPLICATION_JSON->value) {
+            $this->parsedBody = json_decode(file_get_contents('php://input'), true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new BadRequestHttpException('Ошибка при декодировании JSON: ' . json_last_error_msg());
@@ -153,15 +153,13 @@ class ServerRequest extends Request implements ServerRequestInterface
             return;
         }
 
-        if ($contentType === ContentTypes::APPLICATION_X_WWW_FORM_URLENCODED->value)
-        {
-            $this->parsedBody =  $_POST;
+        if ($contentType === ContentTypes::APPLICATION_X_WWW_FORM_URLENCODED->value) {
+            $this->parsedBody = $_POST;
 
             return;
         }
 
-        if ($contentType === ContentTypes::MULTIPART_FORM_DATA->value)
-        {
+        if ($contentType === ContentTypes::MULTIPART_FORM_DATA->value) {
             $this->parsedBody = $_POST;
 
             return;

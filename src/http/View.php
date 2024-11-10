@@ -19,12 +19,8 @@ class View implements ViewRendererInterface
      *
      * @throws NotFoundHttpException
      */
-    public function render(string $view, array $params, string|null $viewRootDirectory = null): string
+    public function render(string $view, array $params): string
     {
-        if ($viewRootDirectory !== null) {
-            $this->viewRootDirectory = $viewRootDirectory;
-        }
-
         $directory = array_values($this->config)[0];
 
         if ($this->viewRootDirectory !== null) {
