@@ -28,7 +28,6 @@ class ErrorHandler implements ErrorHandlerInterface
         $debug = $this->debug;
         $debugTag = $this->debugTagStorage->getTag();
 
-
         if ($this->contentType === ContentTypes::APPLICATION_JSON) {
 
             return json_encode([
