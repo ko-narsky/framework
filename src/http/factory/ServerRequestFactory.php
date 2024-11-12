@@ -12,21 +12,28 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class ServerRequestFactory
 {
-    private ServerRequestInterface $instance;
+    /**
+     * @return ServerRequestInterface
+     *
+     * @throws BadRequestHttpException
+     */
     public function create(): ServerRequestInterface
     {
-        $this->instance = new ServerRequest(
+        $instance = new ServerRequest(
             $_SERVER['REQUEST_METHOD'],
             new Uri($_SERVER['REQUEST_URI']),
             $this->getHeaders()
         );
 
-        $this->instance = $this->instance->withParsedBody($this->getParsedBody());
-        $this->instance = $this->instance->withQueryParams($this->getQueryParams());
+        $instance = $instance->withParsedBody($this->getParsedBody($instance));
+        $instance = $instance->withQueryParams($this->getQueryParams($instance));
 
-        return $this->instance;
+        return $instance;
     }
 
+    /**
+     * @return array
+     */
     private function getHeaders(): array
     {
         $headers = [];
@@ -43,9 +50,16 @@ class ServerRequestFactory
         return $headers;
     }
 
-    private function getParsedBody(): array
+    /**
+     * @param ServerRequestInterface $instance
+     *
+     * @return array
+     *
+     * @throws BadRequestHttpException
+     */
+    private function getParsedBody(ServerRequestInterface $instance): array
     {
-        $contentType = $this->instance->getHeader('Content-Type')[0] ?? null;
+        $contentType = $instance->getHeader('Content-Type')[0] ?? null;
 
         if ($contentType === null) {
             return [];
@@ -73,9 +87,9 @@ class ServerRequestFactory
         throw new BadRequestHttpException("Неподдерживаемый тип Content-Type: $contentType");
     }
 
-    private function getQueryParams(): array
+    private function getQueryParams(ServerRequestInterface $instance): array
     {
-        $query = $this->instance->getUri()->getQuery();
+        $query = $instance->getUri()->getQuery();
         $queryParams = [];
 
         if ($query === '') {
