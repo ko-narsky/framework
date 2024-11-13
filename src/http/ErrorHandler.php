@@ -6,6 +6,7 @@ namespace Konarsky\http;
 
 use Konarsky\contracts\DebugTagStorageInterface;
 use Konarsky\contracts\ErrorHandlerInterface;
+use Konarsky\contracts\ViewRendererInterface;
 use Konarsky\http\enum\ContentTypes;
 use Throwable;
 
@@ -14,6 +15,7 @@ class ErrorHandler implements ErrorHandlerInterface
     private ContentTypes $contentType = ContentTypes::TEXT_HTML;
     public function __construct(
         private readonly DebugTagStorageInterface $debugTagStorage,
+        private readonly ViewRendererInterface $viewRenderer,
         private readonly bool $debug,
     ) {
     }
@@ -26,6 +28,7 @@ class ErrorHandler implements ErrorHandlerInterface
         $debug = $this->debug;
         $debugTag = $this->debugTagStorage->getTag();
 
+
         if ($this->contentType === ContentTypes::APPLICATION_JSON) {
 
             return json_encode([
@@ -34,9 +37,10 @@ class ErrorHandler implements ErrorHandlerInterface
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         }
 
-        ob_start();
-        include __DIR__ . '/../errorHandler/views/error.php';
-        return ob_get_clean();
+        return $this->viewRenderer->renderFromFile(
+            __DIR__ . '/../errorHandler/views/error.php',
+            compact('statusCode', 'message', 'trace', 'debug', 'debugTag')
+        );
     }
 
     public function setContentType(ContentTypes $contentType): void

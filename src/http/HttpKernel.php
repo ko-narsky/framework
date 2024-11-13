@@ -15,8 +15,8 @@ use Konarsky\http\response\DeleteResponse;
 use Konarsky\http\response\HtmlResponse;
 use Konarsky\http\response\JsonResponse;
 use Konarsky\http\response\UpdateResponse;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
 final class HttpKernel implements HttpKernelInterface
@@ -30,7 +30,7 @@ final class HttpKernel implements HttpKernelInterface
         $this->response = $this->response->withStatus(200);
     }
 
-    public function handle(RequestInterface $request): ResponseInterface
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
         try {
             $result = $this->router->dispatch($request);
