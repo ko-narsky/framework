@@ -14,15 +14,13 @@ use Throwable;
 class Router implements HTTPRouterInterface
 {
     protected array $routes = [];
-    protected array $middlewares = [];
+    protected array $globalMiddlewares = [];
     protected array $errorMiddlewares = [];
     protected array $prefix = [];
     protected array $targetForMiddleware;
     protected string $methodPath;
 
-    public function __construct(private ContainerInterface $container)
-    {
-    }
+    public function __construct(private ContainerInterface $container) { }
 
     /**
      * Регистрация глобального мидлвеера
@@ -30,49 +28,11 @@ class Router implements HTTPRouterInterface
      * @param string|callable $middleware коллбек функция или неймспейс класса мидлвеера
      *
      * @return HTTPRouterInterface
-     * @throws \ReflectionException
      */
-    public function addMiddleware(callable|string $middleware): HTTPRouterInterface
+    public function addGlobalMiddleware(callable|string $middleware): HTTPRouterInterface
     {
-        // Проверять неймспейс класса на соответствие MiddlewareInterface, при несоответствии выбрасывать ошибку
-        if (is_string($middleware)) {
-            $middleware = $this->container->build($middleware);
-        }
-
-        if ($middleware instanceof MiddlewareInterface === false) {
-            throw new InvalidArgumentException('Middleware должен реализовывать ' . MiddlewareInterface::class);
-        }
-
-        // зарегистрировать мидлвеер как глобальный, участвующий при каждом вызове каждого маршрута
-        $this->middlewares[] = [
-            'method' => $this->targetForMiddleware['method'] ?? null,
-            'path' => $this->targetForMiddleware['path'] ?? null,
-            'middleware' => $middleware
-        ];
-
-        return $this;
-    }
-
-    /**
-     * Регистрация мидлвеера для обработки ошибок.
-     *
-     * @param callable|string $middleware
-     * @return void
-     */
-    public function addErrorMiddleware(callable|string $middleware): HTTPRouterInterface
-    {
-        if (is_string($middleware)) {
-            $middleware = $this->container->build($middleware);
-        }
-
-        if ($middleware instanceof ErrorMiddlewareInterface === false) {
-            throw new InvalidArgumentException('Middleware должен реализовывать ' . ErrorMiddlewareInterface::class);
-        }
-
-        $this->errorMiddlewares[] = [
-            'method' => $this->targetForMiddleware['method'] ?? null,
-            'path' => $this->targetForMiddleware['path'] ?? null,
-            'middleware' => $middleware
+        $this->globalMiddlewares[] = [
+            'middleware' => $middleware,
         ];
 
         return $this;
@@ -81,76 +41,67 @@ class Router implements HTTPRouterInterface
     /**
      * Добавление маршрута для метода GET
      *
-     * @param  string $route путь
-     * @param  string|callable $handler обработчик - коллбек функция
+     * @param string $route путь
+     * @param string|callable $handler обработчик - коллбек функция
      * или неймспейс класса в формате 'Неймспейс::метод'
-     * @return Router
+     * @return Route
      */
-    public function get(string $route, string|callable $handler): self
+    public function get(string $route, string|callable $handler): Route
     {
-        $this->add('GET', $route, $handler);
-
-        return $this;
+        return $this->add('GET', $route, $handler);
     }
 
     /**
      * Добавление маршрута для метода POST
      *
-     * @param  string $route путь
-     * @param  string|callable $handler обработчик - коллбек функция
+     * @param string $route путь
+     * @param string|callable $handler обработчик - коллбек функция
      * или неймспейс класса в формате 'Неймспейс::метод'
-     * @return Router
+     * @return Route
      */
-    public function post(string $route, string|callable $handler): self
+    public function post(string $route, string|callable $handler): Route
     {
-        $this->add('POST', $route, $handler);
-
-        return $this;
+        return $this->add('POST', $route, $handler);
     }
 
     /**
      * Добавление маршрута для метода PUT
      *
-     * @param  string $route путь
-     * @param  string|callable $handler обработчик, коллбек функция
+     * @param string $route путь
+     * @param string|callable $handler обработчик, коллбек функция
      * или неймспейс класса в формате 'Неймспейс::метод'
-     * @return Router
+     * @return Route
      */
-    public function put(string $route, string|callable $handler): self
+    public function put(string $route, string|callable $handler): Route
     {
-        $this->add('PUT', $route, $handler);
-
-        return $this;
+        return $this->add('PUT', $route, $handler);
     }
 
     /**
      * Добавление маршрута для метода PATCH
      *
-     * @param  string $route путь
-     * @param  string|callable $handler обработчик - коллбек функция
+     * @param string $route путь
+     * @param string|callable $handler обработчик - коллбек функция
      * или неймспейс класса в формате 'Неймспейс::метод'
-     * @return Router
+     * @return Route
      */
-    public function patch(string $route, string|callable $handler): self
+    public function patch(string $route, string|callable $handler): Route
     {
-        $this->add('PATCH', $route, $handler);
-
-        return $this;
+        return $this->add('PATCH', $route, $handler);
     }
+
 
     /**
      * Добавление маршрута для метода DELETE
      *
-     * @param  string $route путь
-     * @param  string|callable $handler обработчик - коллбек функция
+     * @param string $route путь
+     * @param string|callable $handler обработчик - коллбек функция
      * или неймспейс класса в формате 'Неймспейс::метод'
-     * @return Router
+     * @return Route
      */
-    public function delete(string $route, string|callable $handler): self
+    public function delete(string $route, string|callable $handler): Route
     {
-        $this->add('DELETE', $route, $handler);
-
-        return $this;
+        return $this->add('DELETE', $route, $handler);
     }
 
     /**
@@ -159,38 +110,30 @@ class Router implements HTTPRouterInterface
      * Пример:
      * /api/v1/path
      * $router->group('api', function (HTTPRouterInterface $router) {
-     *
      *     $router->group('v1', function (HTTPRouterInterface $router) {
-     *
      *         $router->get('/path', SomeHandler::class . '::action');
-     *
      *     });
-     *
      * });
      *
      */
-    public function group(string $name, callable $handler): self
+    public function group(string $name, callable $handler): Route
     {
+        $path = null;
+
         $previousPrefix = $this->prefix;
-
         $prefixNow = trim($name, '/');
-
         $this->prefix[] = $prefixNow;
 
         $handler($this);
 
+        foreach ($this->prefix as $prefix) {
+            $path .= $prefix . '/';
+        }
+
         $this->prefix = $previousPrefix;
-
-        $this->targetForMiddleware['path'] = str_replace(
-            '/' . trim($this->methodPath, '/'),
-            '',
-            $this->targetForMiddleware['path']
-        );
-        $this->targetForMiddleware['method'] = null;
-
         $this->methodPath = $name;
 
-        return $this;
+        return $this->routes['groups'][$path] = new Route(path: $path);
     }
 
     /**
@@ -216,7 +159,6 @@ class Router implements HTTPRouterInterface
      */
     private function prepareParams(string $route): array
     {
-        // Пример простой логики для извлечения параметров
         preg_match_all('/{(\??\w+)(?:=(\w+))?}/', $route, $matches, PREG_SET_ORDER);
         $params = [];
 
@@ -260,13 +202,13 @@ class Router implements HTTPRouterInterface
     /**
      * Добавление маршрута для метода запроса
      *
-     * @param  string $method метод запроса
-     * @param  string $route путь
-     * @param  string|callable $handler обработчик - коллбек функция
+     * @param string $method метод запроса
+     * @param string $route путь
+     * @param string|callable $handler обработчик - коллбек функция
      * или неймспейс класса в формате 'Неймспейс::метод'
-     * @return void
+     * @return Route
      */
-    public function add(string $method, string $route, string|callable $handler): void
+    public function add(string $method, string $route, string|callable $handler): Route
     {
         $path = '/';
         foreach ($this->prefix as $prefix) {
@@ -278,18 +220,13 @@ class Router implements HTTPRouterInterface
 
         [$handler, $action] = $this->resolveHandler($handler);
 
-        $this->routes[$method][$path] = new Route(
+        return $this->routes[$method][$path] = new Route(
             $method,
             $path,
             $handler,
             $action,
             $this->prepareParams($route),
         );
-
-        $this->targetForMiddleware = [
-            'method' => $method,
-            'path' => $path
-        ];
     }
 
     /**
@@ -334,35 +271,28 @@ class Router implements HTTPRouterInterface
     }
 
     /**
-     * Диспетчеризация входящего запроса
+     * Диспетчеризация входящего запроса 🤢
      *
-     * @param  RequestInterface $request объект запроса
+     * @param RequestInterface $request объект запроса
      *
      * @return mixed
      * @throws NotFoundHttpException если маршрут не зарегистрирован в конфигурации машрутов
+     * @throws Throwable
      */
     public function dispatch(RequestInterface $request): mixed
     {
-        $method = $request->getMethod();
-        $path = $request->getUri()->getPath();
+        $httpMethod = $request->getMethod();
+        $requestPath = $request->getUri()->getPath();
+        $route = null;
 
         try {
-            // поиск конфигурации маршрута для пути входящего запроса
-            if (isset($this->routes[$method][$path]) === false) {
+            if (isset($this->routes[$httpMethod][$requestPath]) === false) {
                 throw new NotFoundHttpException('Страница не найдена', 404);
             }
 
-            $route = $this->routes[$method][$path];
+            $route = $this->routes[$httpMethod][$requestPath];
 
-            // применение мидлвееров назначенных как глобальных или для группы, так и для конкретного эндпоинта
-            foreach ($this->middlewares as $middleware) {
-                if (
-                    ($middleware['method'] === null || $middleware['method'] === $method)
-                    && ($middleware['path'] === null || str_contains($path, $middleware['path']) === true)
-                ) {
-                    $middleware['middleware']($this->container->get(RequestInterface::class));
-                }
-            }
+            $this->applyMiddlewares($route);
 
             $params = $this->mapParams($request->getQueryParams(), $route->params);
 
@@ -371,17 +301,105 @@ class Router implements HTTPRouterInterface
             $action = $route->action;
 
             return $controller->$action(...$params);
-        } catch (Throwable $e) {
-            foreach ($this->errorMiddlewares as $errorMiddleware) {
-                if (
-                    ($errorMiddleware['method'] === null || $errorMiddleware['method'] === $method)
-                    && ($errorMiddleware['path'] === null || str_contains($path, $errorMiddleware['path']) === true)
-                ) {
-                    $errorMiddleware['middleware']($e);
-                }
+        } catch (Throwable $error) {
+            $this->applyErrorMiddleware($error, $requestPath, $route);
+
+            throw $error;
+        }
+    }
+
+    /**
+     * @param mixed $middleware
+     * @return MiddlewareInterface|ErrorMiddlewareInterface
+     */
+    private function buildMiddlewareInstance(mixed $middleware): MiddlewareInterface|ErrorMiddlewareInterface
+    {
+        if (is_string($middleware)) {
+            $middleware = $this->container->build($middleware);
+        }
+
+        if (
+            $middleware instanceof MiddlewareInterface === false
+            && $middleware instanceof ErrorMiddlewareInterface === false
+        ) {
+            throw new InvalidArgumentException('Middleware должен реализовывать ' . MiddlewareInterface::class);
+        }
+
+        return $middleware;
+    }
+
+    /**
+     * @param array $middlewares
+     * @return void
+     */
+    private function executeMiddlewares(array $middlewares): void
+    {
+        foreach ($middlewares as $middlewareConfig) {
+            $middlewareInstance = $this->buildMiddlewareInstance($middlewareConfig['middleware']);
+            $middlewareInstance($this->container->get(RequestInterface::class));
+        }
+    }
+
+    /**
+     * @param Route $route
+     * @return void
+     */
+    private function applyMiddlewares(Route $route): void
+    {
+        $groupRoutes = $this->routes['groups'];
+
+        $this->executeMiddlewares($route->middlewares);
+
+        foreach ($groupRoutes as $groupPath => $groupRoute) {
+            if (str_contains($route->path, $groupPath) === false) {
+                continue;
             }
 
-            throw $e;
+            $this->executeMiddlewares($groupRoute->middlewares);
+        }
+
+        $this->executeMiddlewares($this->globalMiddlewares);
+    }
+
+    /**
+     * @param array|null $middlewareConfig Конфигурация middleware для ошибок.
+     * @param Throwable $error Объект ошибки.
+     * @return bool true, если middleware было успешно выполнено, иначе false.
+     */
+    private function invokeErrorMiddleware(?array $middlewareConfig, Throwable $error): bool
+    {
+        if (empty($middlewareConfig) === true) {
+            return false;
+        }
+
+        $errorMiddlewareInstance = $this->buildMiddlewareInstance($middlewareConfig['middleware']);
+        $errorMiddlewareInstance($error);
+
+        return true;
+    }
+
+    /**
+     * @param Throwable $error
+     * @param string $path
+     * @param Route|null $route
+     * @return void
+     */
+    private function applyErrorMiddleware(Throwable $error, string $path, ?Route $route):void
+    {
+        $groupRoutes = $this->routes['groups'];
+
+        if (isset($route) === true && $this->invokeErrorMiddleware($route->errorMiddleware, $error)) {
+            return;
+        }
+
+        foreach ($groupRoutes as $groupPath => $groupRoute) {
+            if (str_contains($path, $groupPath) === false) {
+                continue;
+            }
+
+            if ($this->invokeErrorMiddleware($groupRoute->errorMiddleware, $error)) {
+                return;
+            }
         }
     }
 }
