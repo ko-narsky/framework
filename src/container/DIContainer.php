@@ -125,7 +125,6 @@ class DIContainer implements ContainerInterface
         return new $dependencyName();
     }
 
-
     /**
      * Создает экземпляр класса, реализующего указанный интерфейс, и сохраняет его в качестве синглтона.
      *
@@ -135,40 +134,67 @@ class DIContainer implements ContainerInterface
      */
     public function get(string $id, array $args = []): object
     {
-        if (
-            isset($this->definitions[$id]) === true
-            && (is_string($this->definitions[$id]) === true || is_callable($this->definitions[$id]) === true)
-        ) {
-            $this->definitions[$id] = $this->build($this->definitions[$id], $args);
-
-            return $this->definitions[$id];
-        }
-
         if (isset($this->definitions[$id]) === true) {
-            $reflection = new \ReflectionClass($this->definitions[$id]);
-
-            return $this->get($reflection->getName());
-        }
-
-        if (
-            isset($this->singletons[$id]) === true
-            && (is_string($this->singletons[$id]) === true || is_callable($this->singletons[$id]) === true)
-        ) {
-            $this->singletons[$id] = $this->build($this->singletons[$id], $args);
-
-            return $this->singletons[$id];
+            return $this->resolveDefinition($id, $args);
         }
 
         if (isset($this->singletons[$id]) === true) {
-            return $this->singletons[$id];
+            return $this->resolveSingleton($id, $args);
         }
 
         if (class_exists($id) === false) {
-            throw new \Exception("Контрак $id не найден");
+            throw new \Exception("Контракт $id не найден");
         }
 
         return $this->build($id, $args);
     }
+
+    /**
+     * @param string $id
+     * @param array $args
+     * @return object
+     * @throws \ReflectionException
+     * @throws Exception
+     */
+    private function resolveDefinition(string $id, array $args): object
+    {
+        $definition = $this->definitions[$id];
+
+        if (is_array($definition)=== true) {
+            $args = array_merge(end($definition), $args);
+            $definition = array_shift($definition);
+        }
+
+        if (is_string($definition)=== true || is_callable($definition)=== true) {
+            return $this->definitions[$id] = $this->build($definition, $args);
+        }
+
+        $reflection = new \ReflectionClass($definition);
+        return $this->get($reflection->getName());
+    }
+
+    /**
+     * @param string $id
+     * @param array $args
+     * @return object
+     * @throws \ReflectionException
+     */
+    private function resolveSingleton(string $id, array $args): object
+    {
+        $singleton = $this->singletons[$id];
+
+        if (is_array($singleton) === true) {
+            $args = array_merge(end($singleton), $args);
+            $singleton = array_shift($singleton);
+        }
+
+        if (is_string($singleton)=== true || is_callable($singleton)=== true) {
+            return $this->singletons[$id] = $this->build($singleton, $args);
+        }
+
+        return $singleton;
+    }
+
 
     /**
      * Выполняет вызов указанного обработчика (callable или объекта)
