@@ -10,6 +10,9 @@ use Psr\Http\Message\RequestInterface;
 
 class RequestFactory
 {
+    /**
+     * @return RequestInterface
+     */
     public function create(): RequestInterface
     {
         return new Request(
@@ -19,6 +22,9 @@ class RequestFactory
         );
     }
 
+    /**
+     * @return array
+     */
     private function getHeaders(): array
     {
         $headers = [];
