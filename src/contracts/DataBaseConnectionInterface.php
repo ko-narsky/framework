@@ -5,32 +5,32 @@ namespace Konarsky\contracts;
 interface DataBaseConnectionInterface
 {
     /**
-     * @param QueryBuilder $query
+     * @param QueryBuilderInterface $query
      *
      * @return array
      */
-    public function select(QueryBuilder $query): array;
+    public function select(QueryBuilderInterface $query): array;
 
     /**
-     * @param QueryBuilder $query
+     * @param QueryBuilderInterface $query
      *
      * @return array|null
      */
-    public function selectOne(QueryBuilder $query): null|array;
+    public function selectOne(QueryBuilderInterface $query): null|array;
 
     /**
-     * @param QueryBuilder $query
+     * @param QueryBuilderInterface $query
      *
      * @return array
      */
-    public function selectColumn(QueryBuilder $query): array;
+    public function selectColumn(QueryBuilderInterface $query): array;
 
     /**
-     * @param QueryBuilder $query
+     * @param QueryBuilderInterface $query
      *
      * @return mixed
      */
-    public function selectScalar(QueryBuilder $query): mixed;
+    public function selectScalar(QueryBuilderInterface $query): mixed;
 
     /**
      * @param string $resource
