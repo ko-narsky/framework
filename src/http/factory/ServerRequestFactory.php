@@ -26,9 +26,8 @@ class ServerRequestFactory
         );
 
         $instance = $instance->withParsedBody($this->getParsedBody($instance));
-        $instance = $instance->withQueryParams($this->getQueryParams($instance));
 
-        return $instance;
+        return $instance->withQueryParams($this->getQueryParams($instance));
     }
 
     /**

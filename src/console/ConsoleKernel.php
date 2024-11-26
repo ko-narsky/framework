@@ -9,9 +9,9 @@ use Konarsky\contracts\{
     ConsoleOutputInterface,
     ConsoleKernelInterface,
     ErrorHandlerInterface,
-    EventDispatcherInterface,
     LoggerInterface
 };
+use Konarsky\http\factory\FormRequestFactory;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 
@@ -27,7 +27,6 @@ final class ConsoleKernel implements ConsoleKernelInterface
         private readonly ConsoleOutputInterface $output,
         private readonly LoggerInterface $logger,
         private readonly ErrorHandlerInterface $errorHandler,
-        private readonly EventDispatcherInterface $eventDispatcher,
         private readonly string $appName,
         private readonly string $version,
     ) {

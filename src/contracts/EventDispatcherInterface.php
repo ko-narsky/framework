@@ -2,7 +2,6 @@
 
 namespace Konarsky\contracts;
 
-
 use Konarsky\eventDispatcher\Message;
 
 interface EventDispatcherInterface
