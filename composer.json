@@ -13,6 +13,7 @@
         "php": ">=8.2",
         "psr/http-message": "^2.0",
         "psr/container": "^2.0",
-        "ext-pcntl": "*"
+        "ext-pcntl": "*",
+        "ext-pdo": "*"
     }
 }
