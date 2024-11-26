@@ -1,10 +1,10 @@
 <?php
 
-namespace Konarsky\DB;
+namespace Konarsky\DB\Mysql;
 
 use Konarsky\contracts\QueryBuilderInterface;
 
-class MariadbQueryBuilder implements QueryBuilderInterface
+class QueryBuilder implements QueryBuilderInterface
 {
     private string $query = '';
 

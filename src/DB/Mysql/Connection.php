@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Konarsky\DB;
+namespace Konarsky\DB\Mysql;
 
 use Konarsky\contracts\DataBaseConnectionInterface;
 use Konarsky\contracts\QueryBuilderInterface;
 use PDO;
 
-class MariadbDatabaseConnection implements DataBaseConnectionInterface
+class Connection implements DataBaseConnectionInterface
 {
     private PDO $connection;
 
