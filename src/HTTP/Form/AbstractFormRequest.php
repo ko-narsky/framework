@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Konarsky\HTTP\Form;
 
 use Konarsky\Contracts\FormRequestInterface;
+use Konarsky\Exceptions\HTTP\BadRequestHttpException;
 use Konarsky\HTTP\Enums\FormRequestRulesEnum;
-use Konarsky\HTTP\Exceptions\BadRequestHttpException;
 
 class AbstractFormRequest implements FormRequestInterface
 {

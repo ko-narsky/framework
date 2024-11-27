@@ -37,7 +37,7 @@ class ErrorHandler implements ErrorHandlerInterface
         }
 
         return $this->viewRenderer->renderFromFile(
-            __DIR__ . '/../ErrorHandler/views/error.php',
+            __DIR__ . '/../Views/ErrorHandler/error.php',
             compact('statusCode', 'message', 'trace', 'debug', 'debugTag')
         );
     }

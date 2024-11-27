@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Konarsky\HTTP\Factories;
 
+use Konarsky\Exceptions\HTTP\BadRequestHttpException;
 use Konarsky\HTTP\Enums\ContentTypes;
-use Konarsky\HTTP\Exceptions\BadRequestHttpException;
 use Konarsky\HTTP\ServerRequest;
 use Konarsky\HTTP\Uri;
 use Psr\Http\Message\ServerRequestInterface;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Konarsky\HTTP\Exceptions;
+namespace Konarsky\Exceptions\HTTP;
 
 class ForbiddenHttpException extends HttpException
 {

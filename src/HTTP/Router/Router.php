@@ -6,7 +6,7 @@ use InvalidArgumentException;
 use Konarsky\Contracts\ErrorMiddlewareInterface;
 use Konarsky\Contracts\HTTPRouterInterface;
 use Konarsky\Contracts\MiddlewareInterface;
-use Konarsky\HTTP\Exceptions\NotFoundHttpException;
+use Konarsky\Exceptions\HTTP\NotFoundHttpException;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\RequestInterface;
 use Throwable;
