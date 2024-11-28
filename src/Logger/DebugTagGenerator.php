@@ -2,7 +2,7 @@
 
 namespace Konarsky\Logger;
 
-use Konarsky\Contracts\{DebugTagGeneratorInterface, DebugTagStorageInterface};
+use Konarsky\Contract\{DebugTagGeneratorInterface, DebugTagStorageInterface};
 use Psr\Http\Message\RequestInterface;
 use RuntimeException;
 

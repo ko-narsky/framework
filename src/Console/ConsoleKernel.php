@@ -2,8 +2,8 @@
 
 namespace Konarsky\Console;
 
-use Konarsky\Console\Commands\ListCommand;
-use Konarsky\Contracts\{
+use Konarsky\Console\Command\ListCommand;
+use Konarsky\Contract\{
     ConsoleCommandInterface,
     ConsoleInputInterface,
     ConsoleOutputInterface,

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Konarsky\Database;
 
-use Konarsky\Contracts\ConnectionFactoryInterface;
-use Konarsky\Contracts\DataBaseConnectionInterface;
+use Konarsky\Contract\ConnectionFactoryInterface;
+use Konarsky\Contract\DataBaseConnectionInterface;
 
 class ConnectionFactory implements ConnectionFactoryInterface
 {

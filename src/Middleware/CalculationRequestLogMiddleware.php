@@ -2,9 +2,9 @@
 
 namespace Konarsky\Middleware;
 
-use Konarsky\Contracts\EventDispatcherInterface;
-use Konarsky\Contracts\LoggerInterface;
-use Konarsky\Contracts\MiddlewareInterface;
+use Konarsky\Contract\EventDispatcherInterface;
+use Konarsky\Contract\LoggerInterface;
+use Konarsky\Contract\MiddlewareInterface;
 use Konarsky\EventDispatcher\Message;
 use Konarsky\Logger\LogContextEvent;
 use Psr\Http\Message\RequestInterface;
