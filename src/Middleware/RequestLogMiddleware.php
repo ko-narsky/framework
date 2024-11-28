@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Konarsky\Middleware;
 
-use Konarsky\Contracts\LoggerInterface;
-use Konarsky\Contracts\MiddlewareInterface;
+use Konarsky\Contract\LoggerInterface;
+use Konarsky\Contract\MiddlewareInterface;
 use Psr\Http\Message\RequestInterface;
 
 readonly class RequestLogMiddleware implements MiddlewareInterface

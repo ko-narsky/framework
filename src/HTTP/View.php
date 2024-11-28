@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Konarsky\HTTP;
 
-use Konarsky\Contracts\ViewRendererInterface;
-use Konarsky\Exceptions\viewRenderer\ViewNotFoundException;
+use Konarsky\Contract\ViewRendererInterface;
+use Konarsky\Exception\viewRenderer\ViewNotFoundException;
 
 class View implements ViewRendererInterface
 {

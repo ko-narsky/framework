@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Konarsky\HTTP;
 
-use Konarsky\Contracts\DebugTagStorageInterface;
-use Konarsky\Contracts\ErrorHandlerInterface;
-use Konarsky\Contracts\ViewRendererInterface;
-use Konarsky\HTTP\Enums\ContentTypes;
+use Konarsky\Contract\DebugTagStorageInterface;
+use Konarsky\Contract\ErrorHandlerInterface;
+use Konarsky\Contract\ViewRendererInterface;
+use Konarsky\HTTP\Enum\ContentTypes;
 use Throwable;
 
 class ErrorHandler implements ErrorHandlerInterface
@@ -37,7 +37,7 @@ class ErrorHandler implements ErrorHandlerInterface
         }
 
         return $this->viewRenderer->renderFromFile(
-            __DIR__ . '/../Views/ErrorHandler/error.php',
+            __DIR__ . '/../View/ErrorHandler/error.php',
             compact('statusCode', 'message', 'trace', 'debug', 'debugTag')
         );
     }

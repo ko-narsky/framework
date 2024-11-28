@@ -3,7 +3,7 @@
 namespace Konarsky\EventDispatcher;
 
 use InvalidArgumentException;
-use Konarsky\Contracts\{
+use Konarsky\Contract\{
     EventDispatcherInterface,
     ObserverInterface
 };

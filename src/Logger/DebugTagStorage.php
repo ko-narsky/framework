@@ -2,7 +2,7 @@
 
 namespace Konarsky\Logger;
 
-use Konarsky\Contracts\DebugTagStorageInterface;
+use Konarsky\Contract\DebugTagStorageInterface;
 
 final class DebugTagStorage implements DebugTagStorageInterface
 {

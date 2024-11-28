@@ -2,8 +2,8 @@
 
 namespace Konarsky\Logger;
 
-use Konarsky\Contracts\LoggerInterface;
-use Konarsky\Logger\Enums\LogLevel;
+use Konarsky\Contract\LoggerInterface;
+use Konarsky\Logger\Enum\LogLevel;
 
 abstract class AbstractLogger implements LoggerInterface
 {

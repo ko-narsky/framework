@@ -2,9 +2,9 @@
 
 namespace Konarsky\Console;
 
-use Konarsky\Console\Enums\ConsoleColors;
-use Konarsky\Contracts\ConsoleKernelInterface;
-use Konarsky\Contracts\ConsoleOutputInterface;
+use Konarsky\Console\Enum\ConsoleColors;
+use Konarsky\Contract\ConsoleKernelInterface;
+use Konarsky\Contract\ConsoleOutputInterface;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 

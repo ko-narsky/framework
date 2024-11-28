@@ -2,8 +2,8 @@
 
 namespace Konarsky\Console;
 
-use Konarsky\Console\Enums\ConsoleColors;
-use Konarsky\Contracts\ErrorHandlerInterface;
+use Konarsky\Console\Enum\ConsoleColors;
+use Konarsky\Contract\ErrorHandlerInterface;
 
 final readonly class ErrorHandler implements ErrorHandlerInterface
 {

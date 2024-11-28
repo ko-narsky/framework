@@ -6,14 +6,14 @@ use DateTime;
 use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
-use Konarsky\Contracts\DebugTagStorageInterface;
-use Konarsky\Contracts\EventDispatcherInterface;
-use Konarsky\Logger\Enums\LogLevelNumber;
-use Konarsky\Logger\Observers\ObserveAttachContext;
-use Konarsky\Logger\Observers\ObserveAttachExtras;
-use Konarsky\Logger\Observers\ObserveDetachContext;
-use Konarsky\Logger\Observers\ObserveFlushContext;
-use Konarsky\Logger\Observers\ObserveFlushExtras;
+use Konarsky\Contract\DebugTagStorageInterface;
+use Konarsky\Contract\EventDispatcherInterface;
+use Konarsky\Logger\Enum\LogLevelNumber;
+use Konarsky\Logger\Observer\ObserveAttachContext;
+use Konarsky\Logger\Observer\ObserveAttachExtras;
+use Konarsky\Logger\Observer\ObserveDetachContext;
+use Konarsky\Logger\Observer\ObserveFlushContext;
+use Konarsky\Logger\Observer\ObserveFlushExtras;
 use Psr\Container\ContainerInterface;
 
 class StdoutLogger extends AbstractLogger

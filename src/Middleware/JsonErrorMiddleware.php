@@ -2,9 +2,9 @@
 
 namespace Konarsky\Middleware;
 
-use Konarsky\Contracts\ErrorHandlerInterface;
-use Konarsky\Contracts\ErrorMiddlewareInterface;
-use Konarsky\HTTP\Enums\ContentTypes;
+use Konarsky\Contract\ErrorHandlerInterface;
+use Konarsky\Contract\ErrorMiddlewareInterface;
+use Konarsky\HTTP\Enum\ContentTypes;
 use Throwable;
 
 readonly class JsonErrorMiddleware implements ErrorMiddlewareInterface

@@ -3,8 +3,8 @@
 namespace Konarsky\Console;
 
 use InvalidArgumentException;
-use Konarsky\Console\Enums\ConsoleEvent;
-use Konarsky\Contracts\{
+use Konarsky\Console\Enum\ConsoleEvent;
+use Konarsky\Contract\{
     ConsoleCommandInterface,
     ConsoleInputInterface,
     ConsoleInputPluginInterface,

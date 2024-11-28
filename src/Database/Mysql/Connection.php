@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Konarsky\Database\Mysql;
 
-use Konarsky\Contracts\DataBaseConnectionInterface;
-use Konarsky\Contracts\QueryBuilderInterface;
+use Konarsky\Contract\DataBaseConnectionInterface;
+use Konarsky\Contract\QueryBuilderInterface;
 use PDO;
 
 class Connection implements DataBaseConnectionInterface

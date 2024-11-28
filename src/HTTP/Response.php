@@ -2,7 +2,7 @@
 
 namespace Konarsky\HTTP;
 
-use Konarsky\Contracts\ResponseInterface;
+use Konarsky\Contract\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
 class Response extends Message implements ResponseInterface

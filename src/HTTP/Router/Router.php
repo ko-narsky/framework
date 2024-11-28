@@ -3,10 +3,10 @@
 namespace Konarsky\HTTP\Router;
 
 use InvalidArgumentException;
-use Konarsky\Contracts\ErrorMiddlewareInterface;
-use Konarsky\Contracts\HTTPRouterInterface;
-use Konarsky\Contracts\MiddlewareInterface;
-use Konarsky\Exceptions\HTTP\NotFoundHttpException;
+use Konarsky\Contract\ErrorMiddlewareInterface;
+use Konarsky\Contract\HTTPRouterInterface;
+use Konarsky\Contract\MiddlewareInterface;
+use Konarsky\Exception\HTTP\NotFoundHttpException;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\RequestInterface;
 use Throwable;

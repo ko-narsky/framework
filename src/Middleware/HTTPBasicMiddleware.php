@@ -3,7 +3,7 @@
 namespace Konarsky\Middleware;
 
 use JetBrains\PhpStorm\NoReturn;
-use Konarsky\Contracts\MiddlewareInterface;
+use Konarsky\Contract\MiddlewareInterface;
 use Psr\Http\Message\RequestInterface;
 
 class HTTPBasicMiddleware implements MiddlewareInterface

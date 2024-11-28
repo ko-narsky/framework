@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Konarsky\HTTP;
 
-use Konarsky\Contracts\ErrorHandlerInterface;
-use Konarsky\Contracts\HttpKernelInterface;
-use Konarsky\Contracts\HTTPRouterInterface;
-use Konarsky\Contracts\LoggerInterface;
-use Konarsky\Exceptions\HTTP\HttpException;
-use Konarsky\HTTP\Enums\ContentTypes;
-use Konarsky\HTTP\Responses\CreateResponse;
-use Konarsky\HTTP\Responses\DeleteResponse;
-use Konarsky\HTTP\Responses\HtmlResponse;
-use Konarsky\HTTP\Responses\JsonResponse;
-use Konarsky\HTTP\Responses\UpdateResponse;
+use Konarsky\Contract\ErrorHandlerInterface;
+use Konarsky\Contract\HttpKernelInterface;
+use Konarsky\Contract\HTTPRouterInterface;
+use Konarsky\Contract\LoggerInterface;
+use Konarsky\Exception\HTTP\HttpException;
+use Konarsky\HTTP\Enum\ContentTypes;
+use Konarsky\HTTP\Response\CreateResponse;
+use Konarsky\HTTP\Response\DeleteResponse;
+use Konarsky\HTTP\Response\HtmlResponse;
+use Konarsky\HTTP\Response\JsonResponse;
+use Konarsky\HTTP\Response\UpdateResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
