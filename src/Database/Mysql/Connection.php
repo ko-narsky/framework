@@ -21,34 +21,34 @@ class Connection implements DataBaseConnectionInterface
 
     public function select(QueryBuilderInterface $query): array
     {
-        $stmt = $this->connection->prepare($query->getStatement());
-        $stmt->execute();
+        $statement = $this->connection->prepare($query->getStatement());
+        $statement->execute();
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function selectOne(QueryBuilderInterface $query): null|array
     {
-        $stmt = $this->connection->prepare($query->getStatement());
-        $stmt->execute();
+        $statement = $this->connection->prepare($query->getStatement());
+        $statement->execute();
 
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        return $statement->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
     public function selectColumn(QueryBuilderInterface $query): array
     {
-        $stmt = $this->connection->prepare($query->getStatement());
-        $stmt->execute();
+        $statement = $this->connection->prepare($query->getStatement());
+        $statement->execute();
 
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        return $statement->fetchAll(PDO::FETCH_COLUMN);
     }
 
     public function selectScalar(QueryBuilderInterface $query): mixed
     {
-        $stmt = $this->connection->prepare($query->getStatement());
-        $stmt->execute();
+        $statement = $this->connection->prepare($query->getStatement());
+        $statement->execute();
 
-        return $stmt->fetchColumn();
+        return $statement->fetchColumn();
     }
 
     public function update(string $resource, array $data, array $condition): int
@@ -57,19 +57,19 @@ class Connection implements DataBaseConnectionInterface
         $wherePart = implode(" AND ", array_map(fn($col) => "$col = :cond_$col", array_keys($condition)));
         $sql = "UPDATE $resource SET $setPart WHERE $wherePart";
 
-        $stmt = $this->connection->prepare($sql);
+        $statement = $this->connection->prepare($sql);
 
         foreach ($data as $key => $value) {
-            $stmt->bindValue(":$key", $value);
+            $statement->bindValue(":$key", $value);
         }
 
         foreach ($condition as $key => $value) {
-            $stmt->bindValue(":cond_$key", $value);
+            $statement->bindValue(":cond_$key", $value);
         }
 
-        $stmt->execute();
+        $statement->execute();
 
-        return $stmt->rowCount();
+        return $statement->rowCount();
     }
 
     public function insert(string $resource, array $data): int
@@ -78,13 +78,13 @@ class Connection implements DataBaseConnectionInterface
         $placeholders = implode(", ", array_map(fn($col) => ":$col", array_keys($data)));
         $sql = "INSERT INTO $resource ($columns) VALUES ($placeholders)";
 
-        $stmt = $this->connection->prepare($sql);
+        $statement = $this->connection->prepare($sql);
 
         foreach ($data as $key => $value) {
-            $stmt->bindValue(":$key", $value);
+            $statement->bindValue(":$key", $value);
         }
 
-        $stmt->execute();
+        $statement->execute();
 
         return (int)$this->connection->lastInsertId();
     }
@@ -94,15 +94,15 @@ class Connection implements DataBaseConnectionInterface
         $wherePart = implode(" AND ", array_map(fn($col) => "$col = :$col", array_keys($condition)));
         $sql = "DELETE FROM $resource WHERE $wherePart";
 
-        $stmt = $this->connection->prepare($sql);
+        $statement = $this->connection->prepare($sql);
 
         foreach ($condition as $key => $value) {
-            $stmt->bindValue(":$key", $value);
+            $statement->bindValue(":$key", $value);
         }
 
-        $stmt->execute();
+        $statement->execute();
 
-        return $stmt->rowCount();
+        return $statement->rowCount();
     }
 
     public function getLastInsertId(): string
