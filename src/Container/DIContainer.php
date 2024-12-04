@@ -24,18 +24,6 @@ class DIContainer implements ContainerInterface
     }
 
     /**
-     * @throws \ReflectionException
-     */
-    public static function getInstance(array $config = []): self
-    {
-        if (self::$instance === null) {
-            self::create($config);
-        }
-
-        return self::$instance;
-    }
-
-    /**
      * Запрещает клонирование объекта, являющегося синглтоном
      *
      * @throws LogicException

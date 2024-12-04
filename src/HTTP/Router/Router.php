@@ -290,6 +290,8 @@ class Router implements HTTPRouterInterface
                 throw new NotFoundHttpException('Страница не найдена', 404);
             }
 
+            $this->setMiddlewareHandler();
+
             $route = $this->routes[$httpMethod][$requestPath];
 
             $this->applyMiddlewares($route);
@@ -346,17 +348,7 @@ class Router implements HTTPRouterInterface
      */
     private function applyMiddlewares(Route $route): void
     {
-        $groupRoutes = $this->routes['groups'];
-
         $this->executeMiddlewares($route->middlewares);
-
-        foreach ($groupRoutes as $groupPath => $groupRoute) {
-            if (str_contains($route->path, $groupPath) === false) {
-                continue;
-            }
-
-            $this->executeMiddlewares($groupRoute->middlewares);
-        }
 
         $this->executeMiddlewares($this->globalMiddlewares);
     }
@@ -399,6 +391,33 @@ class Router implements HTTPRouterInterface
 
             if ($this->invokeErrorMiddleware($groupRoute->errorMiddleware, $error)) {
                 return;
+            }
+        }
+    }
+
+    private function setMiddlewareHandler():void
+    {
+        $groups = $this->routes['groups'] ?? null;
+
+        if (isset($groups) === false) {
+            return;
+        }
+
+        unset($this->routes['groups']);
+
+        foreach ($groups as $group) {
+            foreach ($this->routes as $method => $routes) {
+                $this->addMiddlewareFromGroupHandler($method, $routes, $group);
+            }
+        }
+    }
+
+    private function addMiddlewareFromGroupHandler(string $method, array $routes, Route $group):void
+    {
+        foreach ($routes as $route => $value) {
+            if (str_contains($route, $group->path)) {
+                $middlewares =& $this->routes[$method][$route]->middlewares;
+                $middlewares = array_merge($middlewares, $group->middlewares);
             }
         }
     }
