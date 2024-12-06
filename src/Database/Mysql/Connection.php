@@ -12,8 +12,10 @@ class Connection implements DataBaseConnectionInterface
 {
     private PDO $connection;
 
-    public function __construct(array $config)
-    {
+    public function __construct(
+        array $config,
+        private readonly QueryBuilderInterface $queryBuilder,
+    ) {
         $dsn = sprintf("mysql:host=%s;dbname=%s;charset=%s", $config['host'], $config['dbname'], $config['charset']);
         $this->connection = new PDO($dsn, $config['username'], $config['password']);
         $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -54,8 +56,8 @@ class Connection implements DataBaseConnectionInterface
     public function update(string $resource, array $data, array $condition): int
     {
         $setPart = implode(", ", array_map(fn($col) => "$col = :$col", array_keys($data)));
-        $wherePart = implode(" AND ", array_map(fn($col) => "$col = :cond_$col", array_keys($condition)));
-        $sql = "UPDATE $resource SET $setPart WHERE $wherePart";
+        $wherePart = $this->queryBuilder->where($condition)->getStatement();
+        $sql = "UPDATE $resource SET $setPart $wherePart";
 
         $statement = $this->connection->prepare($sql);
 
@@ -64,7 +66,7 @@ class Connection implements DataBaseConnectionInterface
         }
 
         foreach ($condition as $key => $value) {
-            $statement->bindValue(":cond_$key", $value);
+            $statement->bindValue(":where_$key", $value);
         }
 
         $statement->execute();
@@ -91,13 +93,13 @@ class Connection implements DataBaseConnectionInterface
 
     public function delete(string $resource, array $condition): int
     {
-        $wherePart = implode(" AND ", array_map(fn($col) => "$col = :$col", array_keys($condition)));
-        $sql = "DELETE FROM $resource WHERE $wherePart";
+        $wherePart = $this->queryBuilder->where($condition)->getStatement();
+        $sql = "DELETE FROM $resource $wherePart";
 
         $statement = $this->connection->prepare($sql);
 
         foreach ($condition as $key => $value) {
-            $statement->bindValue(":$key", $value);
+            $statement->bindValue(":where_$key", $value);
         }
 
         $statement->execute();

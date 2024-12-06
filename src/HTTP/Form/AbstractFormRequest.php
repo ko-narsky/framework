@@ -8,7 +8,7 @@ use Konarsky\Contract\FormRequestInterface;
 use Konarsky\Exception\HTTP\BadRequestHttpException;
 use Konarsky\HTTP\Enum\FormRequestRulesEnum;
 
-class AbstractFormRequest implements FormRequestInterface
+abstract class AbstractFormRequest implements FormRequestInterface
 {
     protected array $rules = [];
     protected array $errors = [];
