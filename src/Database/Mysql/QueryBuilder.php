@@ -8,27 +8,26 @@ use Konarsky\Contract\QueryBuilderInterface;
 
 class QueryBuilder implements QueryBuilderInterface
 {
-    private string $query = '';
-    private array $params = [];
+    private array $selectFields = [];
+    private array $resources = [];
     private array $whereClause = [];
+    private array $joinClause = [];
+    private array $orderByClause = [];
+    private ?int $limit = null;
+    private ?int $offset = null;
+    private array $groupByClause = [];
+    private array $params = [];
 
     public function select(string|array ...$fields): static
     {
-        if (empty($fields) === true || (is_array($fields[0]) === true && empty($fields[0])) === true) {
-            $this->query .= "SELECT * ";
-
-            return $this;
-        }
-
-        $fields = is_array($fields[0]) ? $fields[0] : $fields;
-        $this->query .= "SELECT " . implode(", ", $fields) . " ";
+        $this->selectFields = is_array($fields[0]) ? $fields[0] : $fields;
 
         return $this;
     }
 
     public function from(array $resources): static
     {
-        $this->query .= "FROM " . implode(", ", $resources) . " ";
+        $this->resources = $resources;
 
         return $this;
     }
@@ -62,48 +61,80 @@ class QueryBuilder implements QueryBuilderInterface
 
     public function join(string $type, string $resource, string $on): static
     {
-        $this->query .= strtoupper($type) . " JOIN $resource ON $on ";
+        $this->joinClause[] = strtoupper($type) . " JOIN $resource ON $on";
 
         return $this;
     }
 
     public function orderBy(array $columns): static
     {
-        $this->query .= "ORDER BY " . implode(", ", $columns) . " ";
+        $this->orderByClause = $columns;
 
         return $this;
     }
 
     public function limit(int $limit): static
     {
-        $this->query .= "LIMIT $limit ";
+        $this->limit = $limit;
 
         return $this;
     }
 
     public function offset(int $offset): static
     {
-        $this->query .= "OFFSET $offset ";
+        $this->offset = $offset;
+
+        return $this;
+    }
+
+    public function groupBy(array $columns): static
+    {
+        $this->groupByClause = $columns;
 
         return $this;
     }
 
     public function getStatement(): string
     {
-        $this->buildWhereClause();
+        $query = [];
 
-        return $this->query;
+        if (empty($this->selectFields) === false) {
+            $query[] = "SELECT " . implode(", ", $this->selectFields);
+        }
+
+        if (empty($this->resources) === false) {
+            $query[] = "FROM " . implode(", ", $this->resources);
+        }
+
+        if (empty($this->joinClause) === false) {
+            $query[] = implode(" ", $this->joinClause);
+        }
+
+        if (empty($this->whereClause) === false) {
+            $query[] = "WHERE " . implode(" AND ", $this->whereClause);
+        }
+
+        if (empty($this->groupByClause) === false) {
+            $query[] = "GROUP BY " . implode(", ", $this->groupByClause);
+        }
+
+        if (empty($this->orderByClause) === false) {
+            $query[] = "ORDER BY " . implode(", ", $this->orderByClause);
+        }
+
+        if ($this->limit !== null) {
+            $query[] = "LIMIT {$this->limit}";
+        }
+
+        if ($this->offset !== null) {
+            $query[] = "OFFSET {$this->offset}";
+        }
+
+        return implode(" ", $query);
     }
 
     public function getParams(): array
     {
-        return $this->params ?? [];
-    }
-
-    private function buildWhereClause(): void
-    {
-        if (empty($this->whereClause) === false) {
-            $this->query .= "WHERE " . implode(" AND ", $this->whereClause) . " ";
-        }
+        return $this->params;
     }
 }
