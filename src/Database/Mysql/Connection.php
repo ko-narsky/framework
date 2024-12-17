@@ -12,10 +12,8 @@ class Connection implements DataBaseConnectionInterface
 {
     private PDO $connection;
 
-    public function __construct(
-        array $config,
-        private readonly QueryBuilderInterface $queryBuilder,
-    ) {
+    public function __construct(array $config)
+    {
         $dsn = sprintf("mysql:host=%s;dbname=%s;charset=%s", $config['host'], $config['dbname'], $config['charset']);
         $this->connection = new PDO($dsn, $config['username'], $config['password']);
         $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -24,7 +22,7 @@ class Connection implements DataBaseConnectionInterface
     public function select(QueryBuilderInterface $query): array
     {
         $statement = $this->connection->prepare($query->getStatement());
-        $statement->execute();
+        $statement->execute($query->getParams());
 
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -32,7 +30,7 @@ class Connection implements DataBaseConnectionInterface
     public function selectOne(QueryBuilderInterface $query): null|array
     {
         $statement = $this->connection->prepare($query->getStatement());
-        $statement->execute();
+        $statement->execute($query->getParams());
 
         return $statement->fetch(PDO::FETCH_ASSOC) ?: null;
     }
@@ -40,7 +38,7 @@ class Connection implements DataBaseConnectionInterface
     public function selectColumn(QueryBuilderInterface $query): array
     {
         $statement = $this->connection->prepare($query->getStatement());
-        $statement->execute();
+        $statement->execute($query->getParams());
 
         return $statement->fetchAll(PDO::FETCH_COLUMN);
     }
@@ -48,15 +46,18 @@ class Connection implements DataBaseConnectionInterface
     public function selectScalar(QueryBuilderInterface $query): mixed
     {
         $statement = $this->connection->prepare($query->getStatement());
-        $statement->execute();
+        $statement->execute($query->getParams());
 
         return $statement->fetchColumn();
     }
 
     public function update(string $resource, array $data, array $condition): int
     {
-        $setPart = implode(", ", array_map(fn($col) => "$col = :$col", array_keys($data)));
-        $wherePart = $this->queryBuilder->where($condition)->getStatement();
+        $setPart = implode(', ', array_map(fn($col) => "$col = :$col", array_keys($data)));
+
+        $queryBuilder = new QueryBuilder();
+        $wherePart = $queryBuilder->where($condition)->getStatement();
+
         $sql = "UPDATE $resource SET $setPart $wherePart";
 
         $statement = $this->connection->prepare($sql);
@@ -76,8 +77,8 @@ class Connection implements DataBaseConnectionInterface
 
     public function insert(string $resource, array $data): int
     {
-        $columns = implode(", ", array_keys($data));
-        $placeholders = implode(", ", array_map(fn($col) => ":$col", array_keys($data)));
+        $columns = implode(', ', array_keys($data));
+        $placeholders = implode(', ', array_map(fn($col) => ":$col", array_keys($data)));
         $sql = "INSERT INTO $resource ($columns) VALUES ($placeholders)";
 
         $statement = $this->connection->prepare($sql);
@@ -93,7 +94,9 @@ class Connection implements DataBaseConnectionInterface
 
     public function delete(string $resource, array $condition): int
     {
-        $wherePart = $this->queryBuilder->where($condition)->getStatement();
+        $queryBuilder = new QueryBuilder();
+        $wherePart = $queryBuilder->where($condition)->getStatement();
+
         $sql = "DELETE FROM $resource $wherePart";
 
         $statement = $this->connection->prepare($sql);
@@ -102,7 +105,7 @@ class Connection implements DataBaseConnectionInterface
             $statement->bindValue(":where_$key", $value);
         }
 
-        $statement->execute();
+        $statement->execute($queryBuilder->getParams());
 
         return $statement->rowCount();
     }
