@@ -9,7 +9,7 @@ use Konarsky\Contract\QueryBuilderInterface;
 class QueryBuilder implements QueryBuilderInterface
 {
     private array $selectFields = [];
-    private array $resources = [];
+    private string $resource;
     private array $whereClause = [];
     private array $joinClause = [];
     private array $orderByClause = [];
@@ -25,12 +25,23 @@ class QueryBuilder implements QueryBuilderInterface
         return $this;
     }
 
-    public function from(array $resources): static
+    public function from(string|array $resource): static
     {
-        $this->resources = $resources;
+        if (is_string($resource) === true) {
+            $this->resource = $resource;
+        }
+
+        if (is_array($resource) === true) {
+            $this->resource = key($resource) . ' AS ' . current($resource);
+        }
+
+        if (is_array($resource) === true && array_is_list($resource) === true) {
+            $this->resource = $resource[0];
+        }
 
         return $this;
     }
+
 
     public function where(array $condition): static
     {
@@ -54,13 +65,21 @@ class QueryBuilder implements QueryBuilderInterface
             $this->params[$placeholder] = $value;
         }
 
-        $this->whereClause[] = "$column IN (" . implode(", ", $placeholders) . ")";
+        $this->whereClause[] = "$column IN (" . implode(', ', $placeholders) . ')';
 
         return $this;
     }
 
-    public function join(string $type, string $resource, string $on): static
+    public function join(string $type, string|array $resource, string $on): static
     {
+        if (is_array($resource) === true && array_is_list($resource) === false) {
+            $resource = key($resource) . ' AS ' . current($resource);
+        }
+
+        if (is_array($resource) === true && array_is_list($resource) === true) {
+            $resource = $resource[0];
+        }
+
         $this->joinClause[] = strtoupper($type) . " JOIN $resource ON $on";
 
         return $this;
@@ -99,11 +118,11 @@ class QueryBuilder implements QueryBuilderInterface
         $query = [];
 
         if (empty($this->selectFields) === false) {
-            $query[] = "SELECT " . implode(", ", $this->selectFields);
+            $query[] = 'SELECT ' . implode(', ', $this->selectFields);
         }
 
-        if (empty($this->resources) === false) {
-            $query[] = "FROM " . implode(", ", $this->resources);
+        if (isset($this->resource) === true) {
+            $query[] = 'FROM ' . $this->resource;
         }
 
         if (empty($this->joinClause) === false) {
@@ -111,15 +130,15 @@ class QueryBuilder implements QueryBuilderInterface
         }
 
         if (empty($this->whereClause) === false) {
-            $query[] = "WHERE " . implode(" AND ", $this->whereClause);
+            $query[] = 'WHERE ' . implode(' AND ', $this->whereClause);
         }
 
         if (empty($this->groupByClause) === false) {
-            $query[] = "GROUP BY " . implode(", ", $this->groupByClause);
+            $query[] = 'GROUP BY ' . implode(', ', $this->groupByClause);
         }
 
         if (empty($this->orderByClause) === false) {
-            $query[] = "ORDER BY " . implode(", ", $this->orderByClause);
+            $query[] = 'ORDER BY ' . implode(', ', $this->orderByClause);
         }
 
         if ($this->limit !== null) {
@@ -130,7 +149,7 @@ class QueryBuilder implements QueryBuilderInterface
             $query[] = "OFFSET {$this->offset}";
         }
 
-        return implode(" ", $query);
+        return implode(' ', $query);
     }
 
     public function getParams(): array
