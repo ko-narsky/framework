@@ -12,11 +12,11 @@ interface QueryBuilderInterface
     public function select(array|string ...$fields): static;
 
     /**
-     * @param array $resources
+     * @param array|string $resource
      *
      * @return $this
      */
-    public function from(array $resources): static;
+    public function from(array|string $resource): static;
 
     /**
      * @param array $condition
