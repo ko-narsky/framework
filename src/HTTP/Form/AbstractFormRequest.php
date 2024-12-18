@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Konarsky\HTTP\Form;
 
 use Konarsky\Contract\FormRequestInterface;
+use Konarsky\Exception\Form\ValidationException;
 use Konarsky\Exception\HTTP\BadRequestHttpException;
-use Konarsky\HTTP\Enum\FormRequestRulesEnum;
 
 abstract class AbstractFormRequest implements FormRequestInterface
 {
     protected array $rules = [];
     protected array $errors = [];
-    protected array $values = [];
+    protected array $values = ['name' => null];
     protected bool $skipEmptyValues = false;
 
     /**
@@ -27,22 +27,23 @@ abstract class AbstractFormRequest implements FormRequestInterface
      */
     public function rules(): array
     {
-        return [];
+        return $this->rules;
     }
 
     /**
      * Динамическая установка правил валидации
      *
-     * @param  array $attributes
-     * @param  array $rule
+     * @param array $attributes
+     * @param array|string $rule
+     *
      * @return array
      * Пример:
      * $form->addRule(['name'], 'required');
      */
-    public function addRule(array $attributes, array $rule): array
+    public function addRule(array $attributes, array|string $rule): array // TODO изменил array|string
     {
         foreach ($attributes as $attribute) {
-            $this->rules[$attribute][] = $rule;
+            $this->rules[$attribute][] = is_string($rule) === true ? [$rule] : $rule;
         }
 
         return $this->rules;
@@ -60,9 +61,7 @@ abstract class AbstractFormRequest implements FormRequestInterface
                 continue;
             }
 
-            foreach ($rules as $rule) {
-                (new (FormRequestRulesEnum::match($rule)))->validate($attribute, $this->values[$attribute]);
-            }
+            $this->validateAttribute($attribute, $value, $rules);
         }
     }
 
@@ -95,5 +94,33 @@ abstract class AbstractFormRequest implements FormRequestInterface
     public function getValues(): array
     {
         return $this->values;
+    }
+
+    /**
+     * @param string $attribute
+     * @param mixed $value
+     * @param array $rules
+     *
+     * @return void
+     *
+     * @throws BadRequestHttpException
+     */
+    private function validateAttribute(string $attribute, mixed $value, array $rules): void
+    {
+        foreach ($rules as $rule) {
+            $ruleName = array_is_list($rule) === true ? current($rule) : key($rule);
+            $ruleOptions = array_is_list($rule) === true ? null : current($rule);
+            $ruleNamespace = __NAMESPACE__ . '\\Rule\\' . ucfirst($ruleName) . 'Rule';
+
+            if (class_exists($ruleNamespace) === false) {
+                throw new BadRequestHttpException('Правила валидации ' . $ruleName . ' не существует');
+            }
+
+            try {
+                (new $ruleNamespace())->validate($value, $ruleOptions);
+            } catch (ValidationException $e) {
+                $this->addError($attribute, $e->getMessage());
+            }
+        }
     }
 }
