@@ -2,13 +2,16 @@
 
 namespace Konarsky\Contract;
 
+use Konarsky\Exception\Form\ValidationException;
+
 interface FormRequestRuleInterface
 {
     /**
-     * @param string $attribute
      * @param mixed $value
      *
      * @return void
+     *
+     * @throws ValidationException
      */
-    public function validate(string $attribute, mixed $value): void;
+    public function validate(mixed $value, mixed $options): void;
 }
