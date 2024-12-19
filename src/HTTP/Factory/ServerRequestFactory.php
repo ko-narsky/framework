@@ -64,7 +64,7 @@ class ServerRequestFactory
             return [];
         }
 
-        if ($contentType === ContentTypes::APPLICATION_JSON->value) {
+        if (str_starts_with($contentType, ContentTypes::APPLICATION_JSON->value)) {
             $parsedBody = json_decode(file_get_contents('php://input'), true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -74,13 +74,12 @@ class ServerRequestFactory
             return $parsedBody;
         }
 
-        if ($contentType === ContentTypes::APPLICATION_X_WWW_FORM_URLENCODED->value) {
+        if (str_starts_with($contentType, ContentTypes::APPLICATION_X_WWW_FORM_URLENCODED->value)) {
             return $_POST;
         }
 
-        if ($contentType === ContentTypes::MULTIPART_FORM_DATA->value) {
+        if (str_starts_with($contentType, ContentTypes::MULTIPART_FORM_DATA->value)) {
             return $_POST;
-
         }
 
         throw new BadRequestHttpException("Неподдерживаемый тип Content-Type: $contentType");

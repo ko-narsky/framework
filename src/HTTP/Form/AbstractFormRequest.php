@@ -12,7 +12,7 @@ abstract class AbstractFormRequest implements FormRequestInterface
 {
     protected array $rules = [];
     protected array $errors = [];
-    protected array $values = ['name' => null];
+    protected array $values = [];
     protected bool $skipEmptyValues = false;
 
     /**
