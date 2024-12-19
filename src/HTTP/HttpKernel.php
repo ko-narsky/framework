@@ -14,6 +14,7 @@ use Konarsky\HTTP\Response\CreateResponse;
 use Konarsky\HTTP\Response\DeleteResponse;
 use Konarsky\HTTP\Response\HtmlResponse;
 use Konarsky\HTTP\Response\JsonResponse;
+use Konarsky\HTTP\Response\PatchResponse;
 use Konarsky\HTTP\Response\UpdateResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -60,6 +61,10 @@ final class HttpKernel implements HttpKernelInterface
             }
 
             if ($result instanceof UpdateResponse) {
+                $this->response = $this->response->withStatus(200);
+            }
+
+            if ($result instanceof PatchResponse) {
                 $this->response = $this->response->withStatus(200);
             }
         } catch (HttpException $e) {

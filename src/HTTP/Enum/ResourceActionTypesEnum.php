@@ -6,9 +6,10 @@ namespace Konarsky\HTTP\Enum;
 
 enum ResourceActionTypesEnum: string
 {
+    case INDEX = 'index';
+    case VIEW = 'view';
     case CREATE = 'create';
-    case READ = 'read';
-    case PUT = 'put';
+    case UPDATE = 'update';
     case PATCH = 'patch';
     case DELETE = 'delete';
 }
