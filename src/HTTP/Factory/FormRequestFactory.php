@@ -8,10 +8,14 @@ use Konarsky\Contract\FormRequestFactoryInterface;
 use Konarsky\Contract\FormRequestInterface;
 use LogicException;
 use Psr\Container\ContainerInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 final readonly class FormRequestFactory implements FormRequestFactoryInterface
 {
-    public function __construct(private ContainerInterface $container) { }
+    public function __construct(
+        private ContainerInterface $container,
+        private ServerRequestInterface $request,
+    ) { }
 
     /**
      * @inheritDoc
@@ -19,9 +23,9 @@ final readonly class FormRequestFactory implements FormRequestFactoryInterface
     public function create(string $formClassName): FormRequestInterface
     {
         if (class_exists($formClassName) === true) {
-            return $this->container->get($formClassName);
+            return $this->container->get($formClassName, ['values' => $this->request->getParsedBody()]);
         }
 
-        throw new LogicException('Класс формы запроса ' . $formClassName . ' не существует');
+        throw new LogicException('Класс формы ' . $formClassName . ' не существует');
     }
 }

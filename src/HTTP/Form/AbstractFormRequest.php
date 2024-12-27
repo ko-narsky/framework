@@ -7,7 +7,6 @@ namespace Konarsky\HTTP\Form;
 use Exception;
 use Konarsky\Contract\FormRequestInterface;
 use Konarsky\Exception\Form\ValidationException;
-use Konarsky\Exception\HTTP\BadRequestHttpException;
 
 abstract class AbstractFormRequest implements FormRequestInterface
 {
@@ -17,7 +16,11 @@ abstract class AbstractFormRequest implements FormRequestInterface
 
    public function __construct(
        protected array $values
-   ) { }
+   ) {
+       foreach ($this->rules() as $rule) {
+           $this->addRule($rule[0], $rule[1]);
+       }
+   }
 
     /**
      * Возврат правил валидации формы
