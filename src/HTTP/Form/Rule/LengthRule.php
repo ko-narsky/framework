@@ -5,20 +5,21 @@ namespace Konarsky\HTTP\Form\Rule;
 use Konarsky\Contract\FormRequestRuleInterface;
 use Konarsky\Exception\Form\ValidationException;
 
-final readonly class MinLengthRule implements FormRequestRuleInterface
+final readonly class LengthRule implements FormRequestRuleInterface
 {
-
     /**
      * @inheritDoc
      */
-    public function validate(mixed $value, mixed $options): void
+    public function validate(mixed $value, array $options): void
     {
-        if (is_string($value) === false) {
-            throw new ValidationException('Значение должно быть строкой');
+        $length = mb_strlen($value);
+
+        if (key_exists('min', $options) === true && $length < $options['min']) {
+            throw new ValidationException('Минимальная длина строки ' . $options['min'] . ' ' . $this->getSymbolWord($options['min']));
         }
 
-        if (mb_strlen($value) < $options) {
-            throw new ValidationException('Минимальная длина строки ' . $options . ' ' . $this->getSymbolWord($options));
+        if (key_exists('max', $options) === true && $length > $options['max']) {
+            throw new ValidationException('Максимальная длина строки ' . $options['max'] . ' ' . $this->getSymbolWord($options['max']));
         }
     }
 

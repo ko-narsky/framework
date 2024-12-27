@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Konarsky\HTTP\Form;
 
+use Exception;
 use Konarsky\Contract\FormRequestInterface;
 use Konarsky\Exception\Form\ValidationException;
 use Konarsky\Exception\HTTP\BadRequestHttpException;
@@ -12,8 +13,11 @@ abstract class AbstractFormRequest implements FormRequestInterface
 {
     protected array $rules = [];
     protected array $errors = [];
-    protected array $values = [];
     protected bool $skipEmptyValues = false;
+
+   public function __construct(
+       protected array $values
+   ) { }
 
     /**
      * Возврат правил валидации формы
@@ -27,37 +31,37 @@ abstract class AbstractFormRequest implements FormRequestInterface
      */
     public function rules(): array
     {
-        return $this->rules;
+        return [];
     }
 
     /**
      * Динамическая установка правил валидации
      *
      * @param array $attributes
-     * @param array|string $rule
+     * @param array $rule
      *
-     * @return array
+     * @return void Пример:
      * Пример:
-     * $form->addRule(['name'], 'required');
+     * $form->addRule(['name'], ['required']);
+     * ['maxLength' => 10]
      */
-    public function addRule(array $attributes, array|string $rule): array // TODO изменил array|string
+    public function addRule(array $attributes, array $rule): void
     {
         foreach ($attributes as $attribute) {
-            $this->rules[$attribute][] = is_string($rule) === true ? [$rule] : $rule;
+            $this->rules[$attribute][] = $rule;
         }
-
-        return $this->rules;
     }
 
     /**
-     * @throws BadRequestHttpException
+     * @throws Exception
+     * @throws ValidationException
      */
     public function validate(): void
     {
         foreach ($this->rules as $attribute => $rules) {
             $value = $this->values[$attribute] ?? null;
 
-            if ($this->skipEmptyValues === true && $value === null) {
+            if ($this->skipEmptyValues === true && empty($value) === true && is_numeric($value) === false) {
                 continue;
             }
 
@@ -103,17 +107,17 @@ abstract class AbstractFormRequest implements FormRequestInterface
      *
      * @return void
      *
-     * @throws BadRequestHttpException
+     * @throws Exception
      */
     private function validateAttribute(string $attribute, mixed $value, array $rules): void
     {
         foreach ($rules as $rule) {
             $ruleName = array_is_list($rule) === true ? current($rule) : key($rule);
-            $ruleOptions = array_is_list($rule) === true ? null : current($rule);
             $ruleNamespace = __NAMESPACE__ . '\\Rule\\' . ucfirst($ruleName) . 'Rule';
+            $ruleOptions = count($rule) > 1 ? $rule[1] : [];
 
             if (class_exists($ruleNamespace) === false) {
-                throw new BadRequestHttpException('Правила валидации ' . $ruleName . ' не существует');
+                throw new Exception('Правила валидации ' . $ruleName . ' не существует');
             }
 
             try {

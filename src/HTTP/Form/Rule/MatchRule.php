@@ -11,9 +11,9 @@ final readonly class MatchRule implements FormRequestRuleInterface
     /**
      * @inheritDoc
      */
-    public function validate(mixed $value, mixed $options): void
+    public function validate(mixed $value, array $options): void
     {
-        if (is_string($value) === false || preg_match($options, $value) === false) {
+        if (preg_match($options[0], $value) === false) {
             throw new ValidationException('Значение не соответствует формату.');
         }
     }
