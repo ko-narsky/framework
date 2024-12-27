@@ -13,9 +13,9 @@ interface FormRequestInterface
      * @param array $attributes
      * @param array $rule
      *
-     * @return array
+     * @return void
      */
-    public function addRule(array $attributes, array $rule): array;
+    public function addRule(array $attributes, array $rule): void;
 
     /**
      * @return void

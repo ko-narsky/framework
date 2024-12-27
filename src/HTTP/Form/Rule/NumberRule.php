@@ -11,7 +11,7 @@ final readonly class NumberRule implements FormRequestRuleInterface
     /**
      * @inheritDoc
      */
-    public function validate(mixed $value, mixed $options): void
+    public function validate(mixed $value, array $options): void
     {
         if (is_numeric($value) === false) {
             throw new ValidationException('Значение должно быть числом');

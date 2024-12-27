@@ -11,9 +11,9 @@ final readonly class BooleanRule implements FormRequestRuleInterface
     /**
      * @inheritDoc
      */
-    public function validate(mixed $value, mixed $options): void
+    public function validate(mixed $value, array $options): void
     {
-        if (in_array($value, [true, false, 1, 0, '1', '0'], true) === false) {
+        if (is_bool($value) === false) {
             throw new ValidationException('Значение должно быть булевым');
         }
     }

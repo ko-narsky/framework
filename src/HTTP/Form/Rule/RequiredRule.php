@@ -11,10 +11,23 @@ final readonly class RequiredRule implements FormRequestRuleInterface
     /**
      * @inheritDoc
      */
-    public function validate(mixed $value, mixed $options): void
+    public function validate(mixed $value, array $options): void
     {
-        if ($value === null || $value === '' || (is_array($value) === true && empty($value) === true)) {
-            throw new ValidationException('Обязательное значение');
+        if ($value === null) {
+            $this->throwException();
         }
+
+        if (empty($value) === true && is_numeric($value) === false) {
+            $this->throwException();
+        }
+
+        if (is_string($value) === true && trim($value) === '') {
+            $this->throwException();
+        }
+    }
+
+    private function throwException(): never
+    {
+        throw new ValidationException('Обязательное значение');
     }
 }

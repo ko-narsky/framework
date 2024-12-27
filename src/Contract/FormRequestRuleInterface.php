@@ -8,10 +8,9 @@ interface FormRequestRuleInterface
 {
     /**
      * @param mixed $value
-     *
+     * @param array $options
      * @return void
-     *
      * @throws ValidationException
      */
-    public function validate(mixed $value, mixed $options): void;
+    public function validate(mixed $value, array $options): void;
 }
