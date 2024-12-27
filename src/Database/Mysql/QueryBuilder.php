@@ -29,15 +29,11 @@ class QueryBuilder implements QueryBuilderInterface
     {
         if (is_string($resource) === true) {
             $this->resource = $resource;
+
+            return $this;
         }
 
-        if (is_array($resource) === true) {
-            $this->resource = key($resource) . ' AS ' . current($resource);
-        }
-
-        if (is_array($resource) === true && array_is_list($resource) === true) {
-            $this->resource = $resource[0];
-        }
+        $this->resource = key($resource) . ' AS ' . current($resource);
 
         return $this;
     }
@@ -76,10 +72,6 @@ class QueryBuilder implements QueryBuilderInterface
             $resource = key($resource) . ' AS ' . current($resource);
         }
 
-        if (is_array($resource) === true && array_is_list($resource) === true) {
-            $resource = $resource[0];
-        }
-
         $this->joinClause[] = strtoupper($type) . " JOIN $resource ON $on";
 
         return $this;
@@ -113,7 +105,7 @@ class QueryBuilder implements QueryBuilderInterface
         return $this;
     }
 
-    public function getStatement(): string
+    public function getStatement(): StatementParameters
     {
         $query = [];
 
@@ -149,126 +141,9 @@ class QueryBuilder implements QueryBuilderInterface
             $query[] = "OFFSET {$this->offset}";
         }
 
-        return implode(' ', $query);
-    }
-
-    public function getParams(): array
-    {
-        return $this->params;
+        return new StatementParameters(
+            implode(' ', $query),
+            $this->params
+        );
     }
 }
-
-//public function getStatement(): object
-//{
-//    $query = [];
-//
-//    if (!empty($this->selectFields)) {
-//        $query[] = "SELECT " . implode(", ", $this->selectFields);
-//    }
-//
-//    if (isset($this->resource)) {
-//        $query[] = "FROM " . $this->resource;
-//    }
-//
-//    if (!empty($this->joinClause)) {
-//        $query[] = implode(" ", $this->joinClause);
-//    }
-//
-//    if (!empty($this->whereClause)) {
-//        $query[] = "WHERE " . implode(" AND ", $this->whereClause);
-//    }
-//
-//    if (!empty($this->groupByClause)) {
-//        $query[] = "GROUP BY " . implode(", ", $this->groupByClause);
-//    }
-//
-//    if (!empty($this->orderByClause)) {
-//        $query[] = "ORDER BY " . implode(", ", $this->orderByClause);
-//    }
-//
-//    if ($this->limit !== null) {
-//        $query[] = "LIMIT {$this->limit}";
-//    }
-//
-//    if ($this->offset !== null) {
-//        $query[] = "OFFSET {$this->offset}";
-//    }
-//
-//    return (object)[
-//        'sql' => implode(" ", $query),
-//        'params' => $this->params,
-//    ];
-//}
-//
-//$queryBuilder = new QueryBuilder();
-//
-//$sql = $queryBuilder
-//    ->select('*')
-//    ->from(['months' => 'm'])
-//    ->where(['name' => 'октябрь'])
-//    ->join('left', ['prices' => 'p'], 'p.month_id = m.id');
-//
-//$statement = $this->pdo->prepare($sql->getStatement()->sql);
-//$statement->execute($sql->getStatement()->params);
-//$res = $statement->fetchAll(PDO::FETCH_ASSOC);
-
-
-
-
-//public function getStatement(PDO $pdo): PDOStatement
-//{
-//    $query = [];
-//
-//    if (!empty($this->selectFields)) {
-//        $query[] = "SELECT " . implode(", ", $this->selectFields);
-//    }
-//
-//    if (isset($this->resource)) {
-//        $query[] = "FROM " . $this->resource;
-//    }
-//
-//    if (!empty($this->joinClause)) {
-//        $query[] = implode(" ", $this->joinClause);
-//    }
-//
-//    if (!empty($this->whereClause)) {
-//        $query[] = "WHERE " . implode(" AND ", $this->whereClause);
-//    }
-//
-//    if (!empty($this->groupByClause)) {
-//        $query[] = "GROUP BY " . implode(", ", $this->groupByClause);
-//    }
-//
-//    if (!empty($this->orderByClause)) {
-//        $query[] = "ORDER BY " . implode(", ", $this->orderByClause);
-//    }
-//
-//    if ($this->limit !== null) {
-//        $query[] = "LIMIT {$this->limit}";
-//    }
-//
-//    if ($this->offset !== null) {
-//        $query[] = "OFFSET {$this->offset}";
-//    }
-//
-//    $statement = $pdo->prepare(implode(" ", $query));
-//    foreach ($this->params as $param => $value) {
-//        $statement->bindValue($param, $value);
-//    }
-//
-//    return $statement;
-//}
-//
-//$queryBuilder = new QueryBuilder();
-//
-//$statement = $queryBuilder
-//    ->select('*')
-//    ->from(['months' => 'm'])
-//    ->where(['name' => 'октябрь'])
-//    ->join('left', ['prices' => 'p'], 'p.month_id = m.id')
-//    ->getStatement($this->pdo); // Передаём PDO сюда
-//
-//$statement->execute();
-//$res = $statement->fetchAll(PDO::FETCH_ASSOC);
-//
-//print_r($res);

@@ -2,6 +2,8 @@
 
 namespace Konarsky\Contract;
 
+use Konarsky\Database\Mysql\StatementParameters;
+
 interface QueryBuilderInterface
 {
     /**
@@ -40,7 +42,7 @@ interface QueryBuilderInterface
      *
      * @return $this
      */
-    public function join(string $type, string $resource, string $on): static;
+    public function join(string $type, string|array $resource, string $on): static;
 
     /**
      * @param array $columns
@@ -64,7 +66,7 @@ interface QueryBuilderInterface
     public function offset(int $offset): static;
 
     /**
-     * @return mixed
+     * @return StatementParameters
      */
-    public function getStatement(): mixed;
+    public function getStatement(): StatementParameters;
 }
