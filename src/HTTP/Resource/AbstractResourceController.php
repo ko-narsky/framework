@@ -26,8 +26,8 @@ abstract class AbstractResourceController
     ) {
         $this->resourceDataFilter
             ->setResourceName($this->getResourceName())
-            ->setAccessibleFields($this->getAccessibleFilters())
-            ->setAccessibleFilters($this->getAccessibleFields());
+            ->setAccessibleFields($this->getAccessibleFields())
+            ->setAccessibleFilters($this->getAccessibleFilters());
 
         $this->resourceWriter
             ->setResourceName($this->getResourceName());
@@ -79,7 +79,7 @@ abstract class AbstractResourceController
      */
     private function checkCallAvailability(ResourceActionTypesEnum $actionType): void
     {
-        if (in_array($actionType, $this->getAvailableActions()) === true) {
+        if (in_array($actionType, $this->getAvailableActions()) === false) {
             throw new ForbiddenHttpException();
         }
     }
@@ -126,11 +126,11 @@ abstract class AbstractResourceController
      * },
      * @return JsonResponse
      */
-    public function actionView(): JsonResponse
+    public function actionView(string|int $id): JsonResponse
     {
         $this->checkCallAvailability(ResourceActionTypesEnum::VIEW);
 
-        return new JsonResponse($this->resourceDataFilter->filterOne($this->request->getQueryParams()));
+        return new JsonResponse($this->resourceDataFilter->filterOne($id, $this->request->getQueryParams()));
     }
 
     public function actionCreate(): CreateResponse

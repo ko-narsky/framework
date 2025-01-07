@@ -2,8 +2,6 @@
 
 namespace Konarsky\HTTP\Resource;
 
-use Konarsky\Configuration\ConfigurationInterface;
-use Konarsky\Contract\ConnectionFactoryInterface;
 use Konarsky\Contract\DataBaseConnectionInterface;
 use Konarsky\Contract\QueryBuilderInterface;
 use Konarsky\Contract\ResourceDataFilterInterface;
@@ -14,36 +12,39 @@ class ResourceDataFilter implements ResourceDataFilterInterface
     private string $resourceName;
     private array $accessibleFields = [];
     private array $accessibleFilters = [];
-    private readonly DataBaseConnectionInterface $connection;
 
     public function __construct(
-        private readonly ConnectionFactoryInterface $connectionFactory,
-        private readonly ConfigurationInterface $configuration,
-    ) {
-        $this->connection = $this->connectionFactory->createConnection($this->configuration->get('DB_CONFIGURATION'));
-    }
+        private readonly DataBaseConnectionInterface $connection
+    ) { }
+
     /**
      * @inheritDoc
      */
-    public function setResourceName(string $name): void
+    public function setResourceName(string $name): static
     {
         $this->resourceName = $name;
+
+        return $this;
     }
 
     /**
      * @inheritDoc
      */
-    public function setAccessibleFields(array $fieldNames): void
+    public function setAccessibleFields(array $fieldNames): static
     {
         $this->accessibleFields = $fieldNames;
+
+        return $this;
     }
 
     /**
      * @inheritDoc
      */
-    public function setAccessibleFilters(array $filterNames): void
+    public function setAccessibleFilters(array $filterNames): static
     {
         $this->accessibleFilters = $filterNames;
+
+        return $this;
     }
 
     /**
@@ -57,9 +58,12 @@ class ResourceDataFilter implements ResourceDataFilterInterface
     /**
      * @inheritDoc
      */
-    public function filterOne(array $condition): array
+    public function filterOne(int|string $id, array $condition): array|null
     {
-        return $this->connection->selectOne($this->buildQuery($condition));
+        return $this->connection->selectOne(
+            $this->buildQuery($condition)
+                ->where(['id' => $id])
+        );
 
     }
 
@@ -70,31 +74,44 @@ class ResourceDataFilter implements ResourceDataFilterInterface
 
         $queryBuilder = new QueryBuilder();
         $queryBuilder->select($fields)
-            ->from($this->resourceName)
-            ->where($filters);
+            ->from($this->resourceName);
+
+        foreach ($filters as $field => $filter) {
+            foreach ($filter as $operator => $value) {
+                $this->applyFilter($queryBuilder, $field, $operator, $value);
+            }
+        }
 
         return $queryBuilder;
     }
 
-    private function resolveFields(array $requestedFields): array
+    private function resolveFields(array $requestFields): array
     {
-        if (empty($requestedFields) === true) {
+        if (empty($requestFields) === true) {
             return $this->accessibleFields;
         }
 
-        return array_intersect($requestedFields, $this->accessibleFields);
+        return array_intersect($requestFields, $this->accessibleFields);
     }
 
-    private function resolveFilters(array $requestedFilters): array
+    private function resolveFilters(array $requestFilters): array
     {
         $validFilters = [];
 
-        foreach ($requestedFilters as $field => $conditions) {
-            if (in_array($field, $this->accessibleFilters, true)) {
+        foreach ($requestFilters as $field => $conditions) {
+            if (in_array($field, $this->accessibleFilters, true) === true) {
                 $validFilters[$field] = $conditions;
             }
         }
 
         return $validFilters;
+    }
+
+    private function applyFilter(QueryBuilderInterface $queryBuilder, string $field, string $operator, mixed $value): void
+    {
+        match ($operator) {
+            '$eq' => $queryBuilder->where([$field => $value]),
+            default => null
+        };
     }
 }
