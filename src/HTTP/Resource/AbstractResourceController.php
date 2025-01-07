@@ -53,8 +53,9 @@ abstract class AbstractResourceController
 
     protected function getResourceName(): string
     {
-        // возвращать имя ресурса из названия унаследованного контроллера
-        // имя унаследованного контроллера получать средствами позднего статического связывания
+        $className = explode('\\', static::class);
+
+        return lcfirst(preg_replace('/Controller$/', '', end($className)));
     }
 
     /**
@@ -78,7 +79,9 @@ abstract class AbstractResourceController
      */
     private function checkCallAvailability(ResourceActionTypesEnum $actionType): void
     {
-        // реализовать проверку доступности вызова метода на основании разрешенных действий с ресурсом метода getAvailableActions()
+        if (in_array($actionType, $this->getAvailableActions()) === true) {
+            throw new ForbiddenHttpException();
+        }
     }
 
     /**
@@ -139,7 +142,7 @@ abstract class AbstractResourceController
         $form->validate();
 
         if (empty($form->getErrors()) === false) {
-            throw new BadRequestHttpException($form->getErrors());
+            throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
         }
 
         $this->resourceWriter->create($form->getValues());
@@ -156,7 +159,7 @@ abstract class AbstractResourceController
         $form->validate();
 
         if (empty($form->getErrors()) === false) {
-            throw new BadRequestHttpException($form->getErrors());
+            throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
         }
 
         $this->resourceWriter->update($id, $form->getValues());
@@ -175,7 +178,7 @@ abstract class AbstractResourceController
         $form->validate();
 
         if (empty($form->getErrors()) === false) {
-            throw new BadRequestHttpException($form->getErrors());
+            throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
         }
 
         $this->resourceWriter->patch($id, $form->getValues());
