@@ -9,21 +9,21 @@ interface ResourceDataFilterInterface
      *
      * @return void
      */
-    public function setResourceName(string $name): void;
+    public function setResourceName(string $name): static;
 
     /**
      * @param array $fieldNames
      *
      * @return void
      */
-    public function setAccessibleFields(array $fieldNames): void;
+    public function setAccessibleFields(array $fieldNames): static;
 
     /**
      * @param array $filterNames
      *
      * @return void
      */
-    public function setAccessibleFilters(array $filterNames): void;
+    public function setAccessibleFilters(array $filterNames): static;
 
     /**
      * Возврат коллекции ресурсов, отфильтрованных в соответствии с условиями
@@ -82,5 +82,5 @@ interface ResourceDataFilterInterface
      *     "name" => "Некоторое имя 1"
      * ],
      */
-    public function filterOne(array $condition): array;
+    public function filterOne(int|string $id, array $condition): array|null;
 }

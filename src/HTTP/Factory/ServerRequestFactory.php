@@ -94,12 +94,7 @@ class ServerRequestFactory
             return $queryParams;
         }
 
-        $queryGroupParams = explode('&', $query);
-
-        foreach ($queryGroupParams as $queryParam) {
-            $param = explode('=', $queryParam);
-            $queryParams[urldecode($param[0])] = urldecode($param[1]);
-        }
+        parse_str($query, $queryParams);
 
         return $queryParams;
     }

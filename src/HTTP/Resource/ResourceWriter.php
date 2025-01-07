@@ -10,19 +10,17 @@ use Konarsky\Contract\ResourceWriterInterface;
 class ResourceWriter implements ResourceWriterInterface
 {
     private string $resourceName;
-    private readonly DataBaseConnectionInterface $connection;
 
     public function __construct(
-        private readonly ConnectionFactoryInterface $connectionFactory,
-        private readonly ConfigurationInterface $configuration,
-    ) {
-        $this->connection = $this->connectionFactory->createConnection($this->configuration->get('DB_CONFIGURATION'));
-    }
+        private readonly DataBaseConnectionInterface $connection
+    ) { }
 
-    // TODO этого метода не было в интерфейсе
-    public function setResourceName(string $resourceName): void
+
+    public function setResourceName(string $name): static
     {
-        $this->resourceName = $resourceName;
+        $this->resourceName = $name;
+
+        return $this;
     }
 
     /**

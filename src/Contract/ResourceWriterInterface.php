@@ -4,6 +4,7 @@ namespace Konarsky\Contract;
 
 interface ResourceWriterInterface
 {
+    function setResourceName(string $name): static;
     /**
      * @param array $values
      *
