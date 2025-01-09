@@ -7,6 +7,8 @@ use Psr\Http\Message\RequestInterface;
 
 interface HTTPRouterInterface
 {
+    public function addResource(string $name, string $controller, array $config = []);
+
     /**
      * Регистрация глобального мидлвеера
      *

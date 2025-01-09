@@ -6,6 +6,7 @@ use InvalidArgumentException;
 use Konarsky\Contract\ErrorMiddlewareInterface;
 use Konarsky\Contract\HTTPRouterInterface;
 use Konarsky\Contract\MiddlewareInterface;
+use Konarsky\Exception\HTTP\BadRequestHttpException;
 use Konarsky\Exception\HTTP\NotFoundHttpException;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\RequestInterface;
@@ -21,6 +22,11 @@ class Router implements HTTPRouterInterface
     protected string $methodPath;
 
     public function __construct(private ContainerInterface $container) { }
+
+    public function addResource(string $name, string $controller, array $config = null): Route
+    {
+        return (new Resource($name, $controller, $config))->build($this);
+    }
 
     /**
      * Регистрация глобального мидлвеера
@@ -116,7 +122,7 @@ class Router implements HTTPRouterInterface
      * });
      *
      */
-    public function group(string $name, callable $handler): Route
+    public function group(string $name, callable $handler = null): Route
     {
         $path = null;
 
@@ -124,7 +130,9 @@ class Router implements HTTPRouterInterface
         $prefixNow = trim($name, '/');
         $this->prefix[] = $prefixNow;
 
-        $handler($this);
+        if ($handler !== null) {
+            $handler($this);
+        }
 
         foreach ($this->prefix as $prefix) {
             $path .= $prefix . '/';
@@ -159,14 +167,15 @@ class Router implements HTTPRouterInterface
      */
     private function prepareParams(string $route): array
     {
-        preg_match_all('/{(\??\w+)(?:=(\w+))?}/', $route, $matches, PREG_SET_ORDER);
+        preg_match_all('/{(\??\w+)(?:\|(\w+))?(?:=(\w+))?}/', $route, $matches, PREG_SET_ORDER);
         $params = [];
 
         foreach ($matches as $match) {
             $params[] = [
-                'name' => $match[0][1] !== '?' ? $match[1] : substr($match[1], 1),
-                'required' => $match[0][1] !== '?',
-                'default' => $match[2] ?? null,
+                'name' => $match[1] !== '?' ? $match[1] : substr($match[1], 1),
+                'required' => $match[1][0] !== '?',
+                'type' => $match[2] ?? null,
+                'default' => $match[3] ?? null,
             ];
         }
 
@@ -215,7 +224,13 @@ class Router implements HTTPRouterInterface
             $path .= $prefix . '/';
         }
 
-        $this->methodPath = trim(trim(strtok($route, '{')), '/');
+        if (str_contains($route, '{:') === false) {
+            $this->methodPath = trim(trim(strtok($route, '{')), '/');
+        }
+        if (str_contains($route, '{:') === true) {
+            $this->methodPath = trim(trim(substr($route, 0, strpos($route, '}') + 1)), '/');
+        }
+
         $path .= $this->methodPath;
 
         [$handler, $action] = $this->resolveHandler($handler);
@@ -227,6 +242,19 @@ class Router implements HTTPRouterInterface
             $action,
             $this->prepareParams($route),
         );
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function typeConversion(?string $type, mixed $param): mixed
+    {
+        return match ($type) {
+            'integer' => filter_var($param, FILTER_VALIDATE_INT) === false ? throw new BadRequestHttpException('Параметр должен быть типа int') : $param,
+            'boolean' => filter_var($param, FILTER_VALIDATE_BOOL) === false ? throw new BadRequestHttpException('Параметр должен быть типа bool') : $param,
+            'float' => filter_var($param, FILTER_VALIDATE_FLOAT) === false ? throw new BadRequestHttpException('Параметр должен быть типа float') : $param,
+            default => throw new BadRequestHttpException('Передан неподдерживаемый тип')
+        };
     }
 
     /**
@@ -242,19 +270,20 @@ class Router implements HTTPRouterInterface
      * Пример:
      * [700, 900]
      * @throws \InvalidArgumentException если в строке запроса не передан параметр объявленный как обязательный
+     * @throws \Exception
      */
     private function mapParams(array $queryParams, array $params): array
     {
         $result = [];
 
         foreach ($params as $param) {
-            if (isset($queryParams[$param['name']])) {
-                $result[] = $queryParams[$param['name']];
+            if (isset($queryParams[$param['name']]) === true) {
+                $result[] = $this->typeConversion($param['type'], $queryParams[$param['name']]);
 
                 continue;
             }
             if (isset($param['default']) === true) {
-                $result[] = $param['default'];
+                $result[] = $this->typeConversion($param['type'], $param['default']);
 
                 continue;
             }
@@ -284,19 +313,28 @@ class Router implements HTTPRouterInterface
         $httpMethod = $request->getMethod();
         $requestPath = $request->getUri()->getPath();
         $route = null;
+        $params = null;
 
         try {
             if (isset($this->routes[$httpMethod][$requestPath]) === false) {
-                throw new NotFoundHttpException('Страница не найдена', 404);
+                foreach ($this->routes[$httpMethod] as $path => $route) {
+                    if ($this->isDynamicRoute($path, $requestPath, $params)) {
+                        break;
+                    }
+                }
+
+                if (empty($params) === true) {
+                    throw new NotFoundHttpException('Страница не найдена', 404);
+                }
             }
 
             $this->setMiddlewareHandler();
 
-            $route = $this->routes[$httpMethod][$requestPath];
+            $route = $route ?? $this->routes[$httpMethod][$requestPath];
 
             $this->applyMiddlewares($route);
 
-            $params = $this->mapParams($request->getQueryParams(), $route->params);
+            $params = $params ?? $this->mapParams($request->getQueryParams(), $route->params);
 
             // вызов обработчика с передачей параметров из запроса
             $controller = $this->container->get($route->handler);
@@ -308,6 +346,31 @@ class Router implements HTTPRouterInterface
 
             throw $error;
         }
+    }
+
+    /**
+     * @param string $routePath
+     * @param string $requestPath
+     * @param array|null $params
+     * @return bool
+     * @throws \Exception
+     */
+    private function isDynamicRoute(string $routePath, string $requestPath, ?array &$params): bool
+    {
+        if (str_contains($routePath, '{:')) {
+            $routePrefix = trim(strtok($routePath, '{:'), '/');
+            $paramType = substr($routePath, strpos($routePath, '|') + 1, strpos($routePath, '}') - strpos($routePath, '|') - 1);
+            $requestPrefix = trim(substr($requestPath, 0, strrpos($requestPath, '/')), '/');
+
+            if ($requestPrefix === $routePrefix) {
+                $paramValue = substr($requestPath, strrpos($requestPath, '/') + 1);
+                $params[] = $this->typeConversion($paramType, $paramValue);
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -378,7 +441,7 @@ class Router implements HTTPRouterInterface
      */
     private function applyErrorMiddleware(Throwable $error, string $path, ?Route $route):void
     {
-        $groupRoutes = $this->routes['groups'];
+        $groupRoutes = $this->routes['groups'] ?? [];
 
         if (isset($route) === true && $this->invokeErrorMiddleware($route->errorMiddleware, $error)) {
             return;
