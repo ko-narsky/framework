@@ -55,7 +55,9 @@ abstract class AbstractResourceController
     {
         $className = explode('\\', static::class);
 
-        return lcfirst(preg_replace('/Controller$/', '', end($className)));
+        $resourceName = preg_replace('/Controller$/', '', end($className)); // Убираем "Controller" в конце
+
+        return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $resourceName));
     }
 
     /**
