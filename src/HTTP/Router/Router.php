@@ -342,7 +342,7 @@ class Router implements HTTPRouterInterface
 
             return $controller->$action(...$params);
         } catch (Throwable $error) {
-            $this->applyErrorMiddleware($error, $requestPath, $route);
+            $this->invokeErrorMiddleware($route->errorMiddleware, $error);
 
             throw $error;
         }
@@ -433,31 +433,6 @@ class Router implements HTTPRouterInterface
         return true;
     }
 
-    /**
-     * @param Throwable $error
-     * @param string $path
-     * @param Route|null $route
-     * @return void
-     */
-    private function applyErrorMiddleware(Throwable $error, string $path, ?Route $route):void
-    {
-        $groupRoutes = $this->routes['groups'] ?? [];
-
-        if (isset($route) === true && $this->invokeErrorMiddleware($route->errorMiddleware, $error)) {
-            return;
-        }
-
-        foreach ($groupRoutes as $groupPath => $groupRoute) {
-            if (str_contains($path, $groupPath) === false) {
-                continue;
-            }
-
-            if ($this->invokeErrorMiddleware($groupRoute->errorMiddleware, $error)) {
-                return;
-            }
-        }
-    }
-
     private function setMiddlewareHandler():void
     {
         $groups = $this->routes['groups'] ?? null;
@@ -481,6 +456,9 @@ class Router implements HTTPRouterInterface
             if (str_contains($route, $group->path)) {
                 $middlewares =& $this->routes[$method][$route]->middlewares;
                 $middlewares = array_merge($middlewares, $group->middlewares);
+
+                $errorMiddlewares =& $this->routes[$method][$route]->errorMiddleware;
+                $errorMiddlewares = array_merge($errorMiddlewares, $group->errorMiddleware);
             }
         }
     }
