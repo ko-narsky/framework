@@ -29,6 +29,7 @@ final class HttpKernel implements HttpKernelInterface
         private readonly ErrorHandlerInterface $errorHandler,
     ) {
         $this->response = $this->response->withStatus(200);
+        $this->response = $this->response->withBody(new Stream(''));
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface

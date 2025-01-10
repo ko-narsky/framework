@@ -74,6 +74,8 @@ abstract class AbstractResourceController
      */
     abstract protected function getAccessibleFilters(): array;
 
+    abstract protected function getFormRule(FormRequest $form): void;
+
     /**
      * @throws ForbiddenHttpException
      */
@@ -139,10 +141,12 @@ abstract class AbstractResourceController
 
         $form = $this->formRequestFactory->create($this->forms[ResourceActionTypesEnum::CREATE->value]);
 
+        $this->getFormRule($form);
+
         $form->validate();
 
         if (empty($form->getErrors()) === false) {
-            throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
+            throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
         }
 
         $this->resourceWriter->create($form->getValues());
@@ -155,6 +159,8 @@ abstract class AbstractResourceController
         $this->checkCallAvailability(ResourceActionTypesEnum::UPDATE);
 
         $form = $this->formRequestFactory->create($this->forms[ResourceActionTypesEnum::UPDATE->value]);
+
+        $this->getFormRule($form);
 
         $form->validate();
 
@@ -174,6 +180,8 @@ abstract class AbstractResourceController
         $form = $this->formRequestFactory->create($this->forms[ResourceActionTypesEnum::PATCH->value]);
 
         $form->setSkipEmptyValues();
+
+        $this->getFormRule($form);
 
         $form->validate();
 
