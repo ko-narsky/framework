@@ -15,7 +15,6 @@ class ResourceWriter implements ResourceWriterInterface
         private readonly DataBaseConnectionInterface $connection
     ) { }
 
-
     public function setResourceName(string $name): static
     {
         $this->resourceName = $name;
