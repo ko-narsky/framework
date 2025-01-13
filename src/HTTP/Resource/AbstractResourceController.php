@@ -2,11 +2,14 @@
 
 namespace Konarsky\HTTP\Resource;
 
+use Konarsky\Contract\EventDispatcherInterface;
 use Konarsky\Contract\FormRequestFactoryInterface;
 use Konarsky\Contract\ResourceDataFilterInterface;
 use Konarsky\Contract\ResourceWriterInterface;
+use Konarsky\EventDispatcher\Message;
 use Konarsky\Exception\HTTP\BadRequestHttpException;
 use Konarsky\Exception\HTTP\ForbiddenHttpException;
+use Konarsky\HTTP\Enum\FormActionsEnum;
 use Konarsky\HTTP\Enum\ResourceActionTypesEnum;
 use Konarsky\HTTP\Form\FormRequest;
 use Konarsky\HTTP\Response\CreateResponse;
@@ -23,6 +26,7 @@ abstract class AbstractResourceController
         protected ServerRequestInterface $request,
         protected FormRequestFactoryInterface $formRequestFactory,
         protected ResourceWriterInterface $resourceWriter,
+        protected EventDispatcherInterface $eventDispatcher,
     ) {
         $this->resourceDataFilter
             ->setResourceName($this->getResourceName())
@@ -55,7 +59,7 @@ abstract class AbstractResourceController
     {
         $className = explode('\\', static::class);
 
-        $resourceName = preg_replace('/Controller$/', '', end($className)); // Убираем "Controller" в конце
+        $resourceName = preg_replace('/Controller$/', '', end($className));
 
         return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $resourceName));
     }
@@ -75,8 +79,6 @@ abstract class AbstractResourceController
      * @return array
      */
     abstract protected function getAccessibleFilters(): array;
-
-    abstract protected function getFormRule(FormRequest $form): void;
 
     /**
      * @throws ForbiddenHttpException
@@ -143,7 +145,7 @@ abstract class AbstractResourceController
 
         $form = $this->formRequestFactory->create($this->forms[ResourceActionTypesEnum::CREATE->value]);
 
-        $this->getFormRule($form);
+        $this->eventDispatcher->trigger(FormActionsEnum::AFTER_FORM_CREATED->value, new Message($form));
 
         $form->validate();
 
@@ -162,7 +164,7 @@ abstract class AbstractResourceController
 
         $form = $this->formRequestFactory->create($this->forms[ResourceActionTypesEnum::UPDATE->value]);
 
-        $this->getFormRule($form);
+        $this->eventDispatcher->trigger(FormActionsEnum::AFTER_FORM_CREATED->value, new Message($form));
 
         $form->validate();
 
@@ -183,7 +185,7 @@ abstract class AbstractResourceController
 
         $form->setSkipEmptyValues();
 
-        $this->getFormRule($form);
+        $this->eventDispatcher->trigger(FormActionsEnum::AFTER_FORM_CREATED->value, new Message($form));
 
         $form->validate();
 
