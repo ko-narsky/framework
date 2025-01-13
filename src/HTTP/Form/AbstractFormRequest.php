@@ -6,6 +6,7 @@ namespace Konarsky\HTTP\Form;
 
 use Exception;
 use Konarsky\Contract\FormRequestInterface;
+use Konarsky\Exception\Form\RequiredValidationException;
 use Konarsky\Exception\Form\ValidationException;
 
 abstract class AbstractFormRequest implements FormRequestInterface
@@ -125,6 +126,10 @@ abstract class AbstractFormRequest implements FormRequestInterface
 
             try {
                 (new $ruleNamespace())->validate($value, $ruleOptions);
+            } catch (RequiredValidationException $e) {
+                $this->addError($attribute, $e->getMessage());
+
+                break;
             } catch (ValidationException $e) {
                 $this->addError($attribute, $e->getMessage());
             }

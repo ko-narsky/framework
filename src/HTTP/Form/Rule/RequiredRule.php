@@ -3,7 +3,7 @@
 namespace Konarsky\HTTP\Form\Rule;
 
 use Konarsky\Contract\FormRequestRuleInterface;
-use Konarsky\Exception\Form\ValidationException;
+use Konarsky\Exception\Form\RequiredValidationException;
 
 final readonly class RequiredRule implements FormRequestRuleInterface
 {
@@ -28,6 +28,6 @@ final readonly class RequiredRule implements FormRequestRuleInterface
 
     private function throwException(): never
     {
-        throw new ValidationException('Обязательное значение');
+        throw new RequiredValidationException('Обязательное значение');
     }
 }
