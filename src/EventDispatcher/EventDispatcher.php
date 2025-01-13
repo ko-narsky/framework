@@ -24,8 +24,28 @@ class EventDispatcher implements EventDispatcherInterface
         }
     }
 
-    public function attach(string $eventName, ObserverInterface $observer): void
+    public function attach(string $eventName, callable|ObserverInterface $observer): void
     {
+        if (is_callable($observer) === true) {
+            $observer = new class($observer) implements ObserverInterface {
+                private $callback;
+
+                public function __construct(callable $callback)
+                {
+                    $this->callback = $callback;
+                }
+
+                public function observe(Message $message): void
+                {
+                    call_user_func($this->callback, $message);
+                }
+            };
+        }
+
+        if (($observer instanceof ObserverInterface) === false) {
+            throw new InvalidArgumentException('Наблюдатель должен быть колбеком или реализовать ObserverInterface');
+        }
+
         $this->observers[$eventName][] = $observer;
     }
 
