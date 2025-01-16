@@ -23,7 +23,7 @@ class Router implements HTTPRouterInterface
 
     public function __construct(private ContainerInterface $container) { }
 
-    public function addResource(string $name, string $controller, array $config = null): Route
+    public function addResource(string $name, string $controller, array $config = []): Route
     {
         return (new Resource($name, $controller, $config))->build($this);
     }
@@ -253,7 +253,7 @@ class Router implements HTTPRouterInterface
             'integer' => filter_var($param, FILTER_VALIDATE_INT) === false ? throw new BadRequestHttpException('Параметр должен быть типа int') : $param,
             'boolean' => filter_var($param, FILTER_VALIDATE_BOOL) === false ? throw new BadRequestHttpException('Параметр должен быть типа bool') : $param,
             'float' => filter_var($param, FILTER_VALIDATE_FLOAT) === false ? throw new BadRequestHttpException('Параметр должен быть типа float') : $param,
-            default => throw new BadRequestHttpException('Передан неподдерживаемый тип')
+            default => throw new BadRequestHttpException('Передан неподдерживаемый тип ' . $type)
         };
     }
 
