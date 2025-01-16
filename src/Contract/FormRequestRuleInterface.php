@@ -2,7 +2,7 @@
 
 namespace Konarsky\Contract;
 
-use Konarsky\Exception\Form\ValidationException;
+use Konarsky\Exception\Form\RequiredValidationException;
 
 interface FormRequestRuleInterface
 {
@@ -10,7 +10,7 @@ interface FormRequestRuleInterface
      * @param mixed $value
      * @param array $options
      * @return void
-     * @throws ValidationException
+     * @throws RequiredValidationException
      */
     public function validate(mixed $value, array $options): void;
 }
