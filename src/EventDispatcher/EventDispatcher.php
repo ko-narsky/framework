@@ -27,7 +27,7 @@ class EventDispatcher implements EventDispatcherInterface
     public function attach(string $eventName, callable|array|ObserverInterface $observer): void
     {
         if (is_callable($observer) === false && ($observer instanceof ObserverInterface) === false) {
-            throw new InvalidArgumentException('Наблюдатель должен быть колбеком или реализовать ObserverInterface');
+            throw new InvalidArgumentException('Наблюдатель должен быть колбеком, классом объекта или реализовать ObserverInterface');
         }
 
         $this->observers[$eventName][] = $observer;
@@ -46,7 +46,7 @@ class EventDispatcher implements EventDispatcherInterface
 
         foreach ($this->observers[$eventName] as $observer) {
             if (is_callable($observer) === true) {
-                $observer($message);
+                call_user_func([$observer[0], $observer[1]], $message);
                 continue;
             }
 
