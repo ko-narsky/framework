@@ -152,10 +152,11 @@ class QueryBuilder implements MysqlQueryBuilderInterface
         foreach ($data as $alias => $column) {
             if (is_string($alias) === true) {
                 $request .= ' ' . $column . ' AS ' . $alias . ',';
+
+                continue;
             }
-            else {
-                $request .= ' ' . $column . ',';
-            }
+
+            $request .= ' ' . $column . ',';
         }
 
         return rtrim($request, ',');
