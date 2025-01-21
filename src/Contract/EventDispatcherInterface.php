@@ -21,7 +21,7 @@ interface EventDispatcherInterface
      * @param ObserverInterface $observer Наблюдатель, который будет присоединен
      * @return void
      */
-    public function attach(string $eventName, ObserverInterface $observer): void;
+    public function attach(string $eventName, callable|array|ObserverInterface $observer): void;
 
     /**
      * Отписывает наблюдателя от определенного события
