@@ -64,9 +64,4 @@ interface QueryBuilderInterface
      * @return $this
      */
     public function offset(int $offset): static;
-
-    /**
-     * @return StatementParameters
-     */
-    public function getStatement(): StatementParameters;
 }
