@@ -2,35 +2,37 @@
 
 namespace Konarsky\Contract;
 
+use Konarsky\Database\Mysql\MysqlQueryBuilderInterface;
+
 interface DataBaseConnectionInterface
 {
     /**
-     * @param QueryBuilderInterface $query
+     * @param MysqlQueryBuilderInterface $query
      *
      * @return array
      */
-    public function select(QueryBuilderInterface $query): array;
+    public function select(MysqlQueryBuilderInterface $query): array;
 
     /**
-     * @param QueryBuilderInterface $query
+     * @param MysqlQueryBuilderInterface $query
      *
      * @return array|null
      */
-    public function selectOne(QueryBuilderInterface $query): null|array;
+    public function selectOne(MysqlQueryBuilderInterface $query): null|array;
 
     /**
-     * @param QueryBuilderInterface $query
+     * @param MysqlQueryBuilderInterface $query
      *
      * @return array
      */
-    public function selectColumn(QueryBuilderInterface $query): array;
+    public function selectColumn(MysqlQueryBuilderInterface $query): array;
 
     /**
-     * @param QueryBuilderInterface $query
+     * @param MysqlQueryBuilderInterface $query
      *
      * @return mixed
      */
-    public function selectScalar(QueryBuilderInterface $query): mixed;
+    public function selectScalar(MysqlQueryBuilderInterface $query): mixed;
 
     /**
      * @param string $resource

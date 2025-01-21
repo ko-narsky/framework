@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Konarsky\Database\Mysql;
 
 use Konarsky\Contract\DataBaseConnectionInterface;
-use Konarsky\Contract\QueryBuilderInterface;
 use PDO;
 
 class Connection implements DataBaseConnectionInterface
@@ -19,7 +18,7 @@ class Connection implements DataBaseConnectionInterface
         $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
 
-    public function select(QueryBuilderInterface $query): array
+    public function select(MysqlQueryBuilderInterface $query): array
     {
         $statement = $this->connection->prepare($query->getStatement()->sql);
         $statement->execute($query->getStatement()->bindings);
@@ -27,7 +26,7 @@ class Connection implements DataBaseConnectionInterface
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function selectOne(QueryBuilderInterface $query): null|array
+    public function selectOne(MysqlQueryBuilderInterface $query): null|array
     {
         $statement = $this->connection->prepare($query->getStatement()->sql);
         $statement->execute($query->getStatement()->bindings);
@@ -35,7 +34,7 @@ class Connection implements DataBaseConnectionInterface
         return $statement->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public function selectColumn(QueryBuilderInterface $query): array
+    public function selectColumn(MysqlQueryBuilderInterface $query): array
     {
         $statement = $this->connection->prepare($query->getStatement()->sql);
         $statement->execute($query->getStatement()->bindings);
@@ -43,7 +42,7 @@ class Connection implements DataBaseConnectionInterface
         return $statement->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    public function selectScalar(QueryBuilderInterface $query): mixed
+    public function selectScalar(MysqlQueryBuilderInterface $query): mixed
     {
         $statement = $this->connection->prepare($query->getStatement()->sql);
         $statement->execute($query->getStatement()->bindings);

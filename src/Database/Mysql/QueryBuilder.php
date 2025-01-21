@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Konarsky\Database\Mysql;
 
-use Konarsky\Contract\QueryBuilderInterface;
-
-class QueryBuilder implements QueryBuilderInterface
+class QueryBuilder implements MysqlQueryBuilderInterface
 {
     private array $selectFields = [];
     private string $resource;
