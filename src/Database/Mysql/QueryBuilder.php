@@ -18,7 +18,17 @@ class QueryBuilder implements MysqlQueryBuilderInterface
 
     public function select(string|array ...$fields): static
     {
-        $this->selectFields = is_array($fields[0]) ? $fields[0] : $fields;
+        $fields = is_array($fields[0]) ? $fields[0] : $fields;
+
+        foreach ($fields as $field) {
+            if (is_string($field) === true) {
+                $this->selectFields[] = $field;
+
+                continue;
+            }
+
+            $this->selectFields[] = key($field) . ' AS ' . current($field);
+        }
 
         return $this;
     }
@@ -108,7 +118,7 @@ class QueryBuilder implements MysqlQueryBuilderInterface
         $query = [];
 
         if (empty($this->selectFields) === false) {
-            $query[] = 'SELECT' . $this->addAlias($this->selectFields);
+            $query[] = 'SELECT ' . implode(', ', $this->selectFields);
         }
 
         if (isset($this->resource) === true) {
@@ -143,22 +153,5 @@ class QueryBuilder implements MysqlQueryBuilderInterface
             implode(' ', $query),
             $this->params
         );
-    }
-
-    private function addAlias(array $data): string
-    {
-        $request = '';
-
-        foreach ($data as $alias => $column) {
-            if (is_string($alias) === true) {
-                $request .= ' ' . $column . ' AS ' . $alias . ',';
-
-                continue;
-            }
-
-            $request .= ' ' . $column . ',';
-        }
-
-        return rtrim($request, ',');
     }
 }
