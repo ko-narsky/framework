@@ -108,7 +108,7 @@ class QueryBuilder implements MysqlQueryBuilderInterface
         $query = [];
 
         if (empty($this->selectFields) === false) {
-            $query[] = 'SELECT ' . implode(', ', $this->selectFields);
+            $query[] = 'SELECT' . $this->addAlias($this->selectFields);
         }
 
         if (isset($this->resource) === true) {
@@ -143,5 +143,21 @@ class QueryBuilder implements MysqlQueryBuilderInterface
             implode(' ', $query),
             $this->params
         );
+    }
+
+    private function addAlias(array $data): string
+    {
+        $request = '';
+
+        foreach ($data as $alias => $column) {
+            if (is_string($alias) === true) {
+                $request .= ' ' . $column . ' AS ' . $alias . ',';
+            }
+            else {
+                $request .= ' ' . $column . ',';
+            }
+        }
+
+        return rtrim($request, ',');
     }
 }
