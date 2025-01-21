@@ -102,6 +102,12 @@ class DIContainer implements ContainerInterface
                     continue;
                 }
 
+                if (class_exists($parameterTypeName) === true) {
+                    $dependencies[] = $this->build($parameterTypeName);
+
+                    continue;
+                }
+
                 if (array_key_exists($name, $args) === true) {
                     $dependencies[] = $args[$name];
                 }

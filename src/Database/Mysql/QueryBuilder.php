@@ -18,7 +18,17 @@ class QueryBuilder implements MysqlQueryBuilderInterface
 
     public function select(string|array ...$fields): static
     {
-        $this->selectFields = is_array($fields[0]) ? $fields[0] : $fields;
+        $fields = is_array($fields[0]) ? $fields[0] : $fields;
+
+        foreach ($fields as $field) {
+            if (is_string($field) === true) {
+                $this->selectFields[] = $field;
+
+                continue;
+            }
+
+            $this->selectFields[] = key($field) . ' AS ' . current($field);
+        }
 
         return $this;
     }
