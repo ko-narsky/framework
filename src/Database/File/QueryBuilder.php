@@ -18,6 +18,10 @@ class QueryBuilder implements FileQueryBuilderInterface
      */
     public function select(string|array ...$fields): static
     {
+        if (empty($fields) === true) {
+            return $this;
+        }
+
         $this->selectFields = is_array($fields[0]) ? $fields[0] : $fields;
 
         return $this;
