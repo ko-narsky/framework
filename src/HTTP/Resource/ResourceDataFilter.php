@@ -3,9 +3,9 @@
 namespace Konarsky\HTTP\Resource;
 
 use Konarsky\Contract\DataBaseConnectionInterface;
+use Konarsky\Contract\QueryBuilderInterface;
 use Konarsky\Contract\ResourceDataFilterInterface;
-use Konarsky\Database\Mysql\MysqlQueryBuilderInterface;
-use Konarsky\Database\Mysql\QueryBuilder;
+use Konarsky\Database\QueryBuilderFactory;
 
 class ResourceDataFilter implements ResourceDataFilterInterface
 {
@@ -14,7 +14,8 @@ class ResourceDataFilter implements ResourceDataFilterInterface
     private array $accessibleFilters = [];
 
     public function __construct(
-        private readonly DataBaseConnectionInterface $connection
+        private readonly DataBaseConnectionInterface $connection,
+        private readonly QueryBuilderFactory $queryBuilderFactory
     ) { }
 
     /**
@@ -67,12 +68,12 @@ class ResourceDataFilter implements ResourceDataFilterInterface
 
     }
 
-    private function buildQuery(array $condition): MysqlQueryBuilderInterface
+    private function buildQuery(array $condition): QueryBuilderInterface
     {
         $fields = $this->resolveFields($condition['fields'] ?? []);
         $filters = $this->resolveFilters($condition['filter'] ?? []);
 
-        $queryBuilder = new QueryBuilder();
+        $queryBuilder = $this->queryBuilderFactory->create();
         $queryBuilder->select($fields)
             ->from($this->resourceName);
 
@@ -107,7 +108,7 @@ class ResourceDataFilter implements ResourceDataFilterInterface
         return $validFilters;
     }
 
-    private function applyFilter(MysqlQueryBuilderInterface $queryBuilder, string $field, string $operator, mixed $value): void
+    private function applyFilter(QueryBuilderInterface $queryBuilder, string $field, string $operator, mixed $value): void
     {
         match ($operator) {
             '$eq' => $queryBuilder->where([$field => $value]),
