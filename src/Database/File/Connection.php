@@ -12,13 +12,13 @@ class Connection implements DataBaseConnectionInterface
     private string $directory;
     private int $lastInsertId;
 
-    public function __construct(string $directory)
+    public function __construct(array $config)
     {
-        if (is_dir($directory) === false) {
-            throw new InvalidArgumentException("Директория $directory не существует");
+        if (is_dir($config['directory']) === false) {
+            throw new InvalidArgumentException('Директория ' . $config['directory'] . ' не существует');
         }
 
-        $this->directory = rtrim($directory, DIRECTORY_SEPARATOR);
+        $this->directory = rtrim($config['directory'], DIRECTORY_SEPARATOR);
     }
 
     public function select(QueryBuilderInterface $query): array
@@ -109,7 +109,7 @@ class Connection implements DataBaseConnectionInterface
         $fileData = $this->readFile($resource);
         $initialCount = count($fileData);
 
-        $fileData = array_filter($fileData, static fn($row) => $this->matchesCondition($row, $condition) === false);
+        $fileData = array_filter($fileData, fn ($row) => $this->matchesCondition($row, $condition) === false);
 
         $this->writeFile($resource, array_values($fileData));
 
@@ -149,7 +149,7 @@ class Connection implements DataBaseConnectionInterface
                 return in_array($row[$key], $value);
             }
 
-            if (array_key_exists($key, $row) === false || $row[$key] !== $value) {
+            if (array_key_exists($key, $row) === false || (string)$row[$key] !== (string)$value) {
                 return false;
             }
         }
@@ -160,7 +160,7 @@ class Connection implements DataBaseConnectionInterface
     private function applyWhere(array $data, array $whereClause): array
     {
         foreach ($whereClause as $condition) {
-            $data = array_filter($data, static fn ($row) => $this->matchesCondition($row, $condition));
+            $data = array_filter($data, fn ($row) => $this->matchesCondition($row, $condition));
         }
 
         return $data;
