@@ -5,6 +5,7 @@ namespace Konarsky\Database\File;
 use InvalidArgumentException;
 use Konarsky\Contract\DataBaseConnectionInterface;
 use Konarsky\Contract\QueryBuilderInterface;
+use Konarsky\Exception\Base\NotFoundException;
 
 class Connection implements DataBaseConnectionInterface
 {
@@ -33,7 +34,13 @@ class Connection implements DataBaseConnectionInterface
 
         $data = $this->applySelectFields($data, $statement->selectFields);
 
-        return $this->applyLimitOffset($data, $statement->limit, $statement->offset);
+        $data = $this->applyLimitOffset($data, $statement->limit, $statement->offset);
+
+        if (empty($data) === true) {
+            throw new NotFoundException();
+        }
+
+        return $data;
     }
 
     public function selectOne(QueryBuilderInterface $query): null|array
@@ -55,7 +62,7 @@ class Connection implements DataBaseConnectionInterface
     {
         $result = $this->selectColumn($query);
 
-        return $result[0] ?? null;
+        return $result[0];
     }
 
     public function update(string $resource, array $data, array $condition): int
@@ -75,6 +82,9 @@ class Connection implements DataBaseConnectionInterface
             $updatedCount++;
         }
 
+        if ($updatedCount === 0) {
+            throw new NotFoundException();
+        }
 
         $this->writeFile($resource, $fileData);
 
@@ -110,6 +120,10 @@ class Connection implements DataBaseConnectionInterface
         $initialCount = count($fileData);
 
         $fileData = array_filter($fileData, fn ($row) => $this->matchesCondition($row, $condition) === false);
+
+        if ($initialCount === count($fileData)) {
+            throw new NotFoundException();
+        }
 
         $this->writeFile($resource, array_values($fileData));
 

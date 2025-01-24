@@ -2,8 +2,6 @@
 
 namespace Konarsky\HTTP\Resource;
 
-use Konarsky\Configuration\ConfigurationInterface;
-use Konarsky\Contract\ConnectionFactoryInterface;
 use Konarsky\Contract\DataBaseConnectionInterface;
 use Konarsky\Contract\ResourceWriterInterface;
 

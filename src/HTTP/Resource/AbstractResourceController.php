@@ -7,8 +7,10 @@ use Konarsky\Contract\FormRequestFactoryInterface;
 use Konarsky\Contract\ResourceDataFilterInterface;
 use Konarsky\Contract\ResourceWriterInterface;
 use Konarsky\EventDispatcher\Message;
+use Konarsky\Exception\Base\NotFoundException;
 use Konarsky\Exception\HTTP\BadRequestHttpException;
 use Konarsky\Exception\HTTP\ForbiddenHttpException;
+use Konarsky\Exception\HTTP\NotFoundHttpException;
 use Konarsky\HTTP\Enum\FormActionsEnum;
 use Konarsky\HTTP\Enum\ResourceActionTypesEnum;
 use Konarsky\HTTP\Form\FormRequest;
@@ -116,7 +118,11 @@ abstract class AbstractResourceController
     {
         $this->checkCallAvailability(ResourceActionTypesEnum::INDEX);
 
-        return new JsonResponse($this->resourceDataFilter->filterAll($this->request->getQueryParams()));
+        try {
+            return new JsonResponse($this->resourceDataFilter->filterAll($this->request->getQueryParams()));
+        } catch (NotFoundException) {
+            throw new NotFoundHttpException();
+        }
     }
 
     /**
@@ -136,7 +142,11 @@ abstract class AbstractResourceController
     {
         $this->checkCallAvailability(ResourceActionTypesEnum::VIEW);
 
-        return new JsonResponse($this->resourceDataFilter->filterOne($id, $this->request->getQueryParams()));
+        try {
+            return new JsonResponse($this->resourceDataFilter->filterOne($id, $this->request->getQueryParams()));
+        } catch (NotFoundException) {
+            throw new NotFoundHttpException();
+        }
     }
 
     public function actionCreate(): CreateResponse
@@ -172,7 +182,11 @@ abstract class AbstractResourceController
             throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
         }
 
-        $this->resourceWriter->update($id, $form->getValues());
+        try {
+            $this->resourceWriter->update($id, $form->getValues());
+        } catch (NotFoundException) {
+            throw new NotFoundHttpException();
+        }
 
         return new UpdateResponse();
     }
@@ -193,7 +207,11 @@ abstract class AbstractResourceController
             throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
         }
 
-        $this->resourceWriter->patch($id, $form->getValues());
+        try {
+            $this->resourceWriter->patch($id, $form->getValues());
+        } catch (NotFoundException) {
+            throw new NotFoundHttpException();
+        }
 
         return new PatchResponse();
     }
@@ -202,7 +220,12 @@ abstract class AbstractResourceController
     {
         $this->checkCallAvailability(ResourceActionTypesEnum::DELETE);
 
-        $this->resourceWriter->delete($id);
+        try {
+            $this->resourceWriter->delete($id);
+        } catch (NotFoundException) {
+            throw new NotFoundHttpException();
+        }
+
         return new DeleteResponse();
     }
 }

@@ -6,6 +6,7 @@ namespace Konarsky\Database\Mysql;
 
 use Konarsky\Contract\DataBaseConnectionInterface;
 use Konarsky\Contract\QueryBuilderInterface;
+use Konarsky\Exception\Base\NotFoundException;
 use PDO;
 
 class Connection implements DataBaseConnectionInterface
@@ -24,7 +25,13 @@ class Connection implements DataBaseConnectionInterface
         $statement = $this->connection->prepare($query->getStatement()->sql);
         $statement->execute($query->getStatement()->bindings);
 
-        return $statement->fetchAll(PDO::FETCH_ASSOC);
+        $data = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($data) === true) {
+            throw new NotFoundException();
+        }
+
+        return $data;
     }
 
     public function selectOne(QueryBuilderInterface $query): null|array
@@ -32,7 +39,13 @@ class Connection implements DataBaseConnectionInterface
         $statement = $this->connection->prepare($query->getStatement()->sql);
         $statement->execute($query->getStatement()->bindings);
 
-        return $statement->fetch(PDO::FETCH_ASSOC) ?: null;
+        $data = $statement->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        if (empty($data) === true) {
+            throw new NotFoundException();
+        }
+
+        return $data;
     }
 
     public function selectColumn(QueryBuilderInterface $query): array
@@ -40,7 +53,13 @@ class Connection implements DataBaseConnectionInterface
         $statement = $this->connection->prepare($query->getStatement()->sql);
         $statement->execute($query->getStatement()->bindings);
 
-        return $statement->fetchAll(PDO::FETCH_COLUMN);
+        $data = $statement->fetchAll(PDO::FETCH_COLUMN);
+
+        if (empty($data) === true) {
+            throw new NotFoundException();
+        }
+
+        return $data;
     }
 
     public function selectScalar(QueryBuilderInterface $query): mixed
@@ -48,7 +67,13 @@ class Connection implements DataBaseConnectionInterface
         $statement = $this->connection->prepare($query->getStatement()->sql);
         $statement->execute($query->getStatement()->bindings);
 
-        return $statement->fetchColumn();
+        $data = $statement->fetchColumn();
+
+        if ($data === false) {
+            throw new NotFoundException();
+        }
+
+        return $data;
     }
 
     public function update(string $resource, array $data, array $condition): int
@@ -58,8 +83,20 @@ class Connection implements DataBaseConnectionInterface
         $queryBuilder = new QueryBuilder();
         $wherePart = $queryBuilder->where($condition)->getStatement()->sql;
 
-        $sql = "UPDATE $resource SET $setPart $wherePart";
+        $checkSql = "SELECT 1 FROM $resource $wherePart LIMIT 1";
+        $checkStatement = $this->connection->prepare($checkSql);
 
+        foreach ($condition as $key => $value) {
+            $checkStatement->bindValue(":where_$key", $value);
+        }
+
+        $checkStatement->execute();
+
+        if ($checkStatement->fetch() === false) {
+            throw new NotFoundException();
+        }
+
+        $sql = "UPDATE $resource SET $setPart $wherePart";
         $statement = $this->connection->prepare($sql);
 
         foreach ($data as $key => $value) {
@@ -96,6 +133,19 @@ class Connection implements DataBaseConnectionInterface
     {
         $queryBuilder = new QueryBuilder();
         $wherePart = $queryBuilder->where($condition)->getStatement()->sql;
+
+        $checkSql = "SELECT 1 FROM $resource $wherePart LIMIT 1";
+        $checkStatement = $this->connection->prepare($checkSql);
+
+        foreach ($condition as $key => $value) {
+            $checkStatement->bindValue(":where_$key", $value);
+        }
+
+        $checkStatement->execute();
+
+        if ($checkStatement->fetch() === false) {
+            throw new NotFoundException();
+        }
 
         $sql = "DELETE FROM $resource $wherePart";
 
