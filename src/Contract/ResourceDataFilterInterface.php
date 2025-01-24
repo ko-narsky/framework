@@ -2,6 +2,8 @@
 
 namespace Konarsky\Contract;
 
+use Konarsky\Exception\Base\NotFoundException;
+
 interface ResourceDataFilterInterface
 {
     /**
@@ -56,6 +58,7 @@ interface ResourceDataFilterInterface
      *         "name" => "Некоторое имя 2"
      *     ],
      * ]
+     * @throws NotFoundException
      */
     public function filterAll(array $condition): array;
 
@@ -75,12 +78,15 @@ interface ResourceDataFilterInterface
      *         ],
      *     ],
      * ]
-     * @return array
+     *
+     * @return array|null
      * Пример:
      * [
      *     "id" => 1,
      *     "name" => "Некоторое имя 1"
      * ],
+     * @throws NotFoundException
+     *
      */
     public function filterOne(int|string $id, array $condition): array|null;
 }
