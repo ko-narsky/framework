@@ -34,13 +34,7 @@ class Connection implements DataBaseConnectionInterface
 
         $data = $this->applySelectFields($data, $statement->selectFields);
 
-        $data = $this->applyLimitOffset($data, $statement->limit, $statement->offset);
-
-        if (empty($data) === true) {
-            throw new NotFoundException();
-        }
-
-        return $data;
+        return $this->applyLimitOffset($data, $statement->limit, $statement->offset);
     }
 
     public function selectOne(QueryBuilderInterface $query): null|array
@@ -82,10 +76,6 @@ class Connection implements DataBaseConnectionInterface
             $updatedCount++;
         }
 
-        if ($updatedCount === 0) {
-            throw new NotFoundException();
-        }
-
         $this->writeFile($resource, $fileData);
 
         return $updatedCount;
@@ -120,10 +110,6 @@ class Connection implements DataBaseConnectionInterface
         $initialCount = count($fileData);
 
         $fileData = array_filter($fileData, fn ($row) => $this->matchesCondition($row, $condition) === false);
-
-        if ($initialCount === count($fileData)) {
-            throw new NotFoundException();
-        }
 
         $this->writeFile($resource, array_values($fileData));
 
