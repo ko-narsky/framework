@@ -118,11 +118,13 @@ abstract class AbstractResourceController
     {
         $this->checkCallAvailability(ResourceActionTypesEnum::INDEX);
 
-        try {
-            return new JsonResponse($this->resourceDataFilter->filterAll($this->request->getQueryParams()));
-        } catch (NotFoundException) {
-            throw new NotFoundHttpException();
+        $data = $this->resourceDataFilter->filterAll($this->request->getQueryParams());
+
+        if (empty($data) === true) {
+            throw new NotFoundException();
         }
+
+        return new JsonResponse($data);
     }
 
     /**
@@ -142,11 +144,13 @@ abstract class AbstractResourceController
     {
         $this->checkCallAvailability(ResourceActionTypesEnum::VIEW);
 
-        try {
-            return new JsonResponse($this->resourceDataFilter->filterOne($id, $this->request->getQueryParams()));
-        } catch (NotFoundException) {
+        $data = $this->resourceDataFilter->filterOne($id, $this->request->getQueryParams());
+
+        if ($data === null) {
             throw new NotFoundHttpException();
         }
+
+        return new JsonResponse($data);
     }
 
     public function actionCreate(): CreateResponse
@@ -182,11 +186,11 @@ abstract class AbstractResourceController
             throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
         }
 
-        try {
-            $this->resourceWriter->update($id, $form->getValues());
-        } catch (NotFoundException) {
+        if ($this->resourceDataFilter->filterOne($id, []) === null) {
             throw new NotFoundHttpException();
         }
+
+        $this->resourceWriter->update($id, $form->getValues());
 
         return new UpdateResponse();
     }
@@ -207,11 +211,11 @@ abstract class AbstractResourceController
             throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
         }
 
-        try {
-            $this->resourceWriter->patch($id, $form->getValues());
-        } catch (NotFoundException) {
+        if ($this->resourceDataFilter->filterOne($id, []) === null) {
             throw new NotFoundHttpException();
         }
+
+        $this->resourceWriter->patch($id, $form->getValues());
 
         return new PatchResponse();
     }
@@ -220,11 +224,11 @@ abstract class AbstractResourceController
     {
         $this->checkCallAvailability(ResourceActionTypesEnum::DELETE);
 
-        try {
-            $this->resourceWriter->delete($id);
-        } catch (NotFoundException) {
+        if ($this->resourceDataFilter->filterOne($id, []) === null) {
             throw new NotFoundHttpException();
         }
+
+        $this->resourceWriter->delete($id);
 
         return new DeleteResponse();
     }

@@ -27,8 +27,8 @@ class Connection implements DataBaseConnectionInterface
 
         $data = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($data) === true) {
-            throw new NotFoundException();
+        if ($data === false) {
+            return [];
         }
 
         return $data;
@@ -41,8 +41,8 @@ class Connection implements DataBaseConnectionInterface
 
         $data = $statement->fetch(PDO::FETCH_ASSOC) ?: null;
 
-        if (empty($data) === true) {
-            throw new NotFoundException();
+        if ($data === false) {
+            return null;
         }
 
         return $data;
@@ -55,8 +55,8 @@ class Connection implements DataBaseConnectionInterface
 
         $data = $statement->fetchAll(PDO::FETCH_COLUMN);
 
-        if (empty($data) === true) {
-            throw new NotFoundException();
+        if ($data === false) {
+            return [];
         }
 
         return $data;
@@ -70,7 +70,7 @@ class Connection implements DataBaseConnectionInterface
         $data = $statement->fetchColumn();
 
         if ($data === false) {
-            throw new NotFoundException();
+            return null;
         }
 
         return $data;
@@ -83,20 +83,8 @@ class Connection implements DataBaseConnectionInterface
         $queryBuilder = new QueryBuilder();
         $wherePart = $queryBuilder->where($condition)->getStatement()->sql;
 
-        $checkSql = "SELECT 1 FROM $resource $wherePart LIMIT 1";
-        $checkStatement = $this->connection->prepare($checkSql);
-
-        foreach ($condition as $key => $value) {
-            $checkStatement->bindValue(":where_$key", $value);
-        }
-
-        $checkStatement->execute();
-
-        if ($checkStatement->fetch() === false) {
-            throw new NotFoundException();
-        }
-
         $sql = "UPDATE $resource SET $setPart $wherePart";
+
         $statement = $this->connection->prepare($sql);
 
         foreach ($data as $key => $value) {
@@ -133,19 +121,6 @@ class Connection implements DataBaseConnectionInterface
     {
         $queryBuilder = new QueryBuilder();
         $wherePart = $queryBuilder->where($condition)->getStatement()->sql;
-
-        $checkSql = "SELECT 1 FROM $resource $wherePart LIMIT 1";
-        $checkStatement = $this->connection->prepare($checkSql);
-
-        foreach ($condition as $key => $value) {
-            $checkStatement->bindValue(":where_$key", $value);
-        }
-
-        $checkStatement->execute();
-
-        if ($checkStatement->fetch() === false) {
-            throw new NotFoundException();
-        }
 
         $sql = "DELETE FROM $resource $wherePart";
 
