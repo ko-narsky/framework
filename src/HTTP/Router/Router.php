@@ -10,6 +10,7 @@ use Konarsky\Exception\HTTP\BadRequestHttpException;
 use Konarsky\Exception\HTTP\NotFoundHttpException;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
 class Router implements HTTPRouterInterface
@@ -401,7 +402,7 @@ class Router implements HTTPRouterInterface
     {
         foreach ($middlewares as $middlewareConfig) {
             $middlewareInstance = $this->buildMiddlewareInstance($middlewareConfig['middleware']);
-            $middlewareInstance($this->container->get(RequestInterface::class));
+            $middlewareInstance($this->container->get(ServerRequestInterface::class));
         }
     }
 

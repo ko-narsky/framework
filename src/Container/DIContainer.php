@@ -235,6 +235,26 @@ class DIContainer implements ContainerInterface
     }
 
     /**
+     * @param string $contract
+     * @param mixed $singleton
+     * @return void
+     */
+    public function registerSingleton(string $contract, mixed $singleton): void
+    {
+        $this->singletons[$contract] = $singleton;
+    }
+
+    /**
+     * @param string $contract
+     * @param mixed $definition
+     * @return void
+     */
+    public function registerDefinition(string $contract, mixed $definition): void
+    {
+        $this->definitions[$contract] = $definition;
+    }
+
+    /**
      * Проверяет наличие контракта в конфигурации.
      *
      * @param string $id имя контракта
