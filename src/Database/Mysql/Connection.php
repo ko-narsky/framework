@@ -139,4 +139,15 @@ class Connection implements DataBaseConnectionInterface
     {
         return $this->connection->lastInsertId();
     }
+
+    public function isExist(string $resource, string $column, mixed $value): bool
+    {
+        $sql = "SELECT EXISTS(SELECT 1 FROM $resource WHERE $column = :value)";
+
+        $statement = $this->connection->prepare($sql);
+        $statement->bindValue(':value', $value);
+        $statement->execute();
+
+        return (bool) $statement->fetchColumn();
+    }
 }
