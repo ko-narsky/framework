@@ -57,4 +57,6 @@ interface DataBaseConnectionInterface
      * @return string
      */
     public function getLastInsertId(): string;
+
+    public function isExist(string $resource, string $column, mixed $value): bool;
 }

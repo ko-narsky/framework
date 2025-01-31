@@ -192,4 +192,15 @@ class Connection implements DataBaseConnectionInterface
             $data
         );
     }
+
+    public function isExist(string $resource, string $column, mixed $value): bool
+    {
+        foreach ($this->readFile($resource) as $row) {
+            if (array_key_exists($column, $row) && (string)$row[$column] === (string)$value) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

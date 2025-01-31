@@ -121,7 +121,7 @@ abstract class AbstractResourceController
         $data = $this->resourceDataFilter->filterAll($this->request->getQueryParams());
 
         if (empty($data) === true) {
-            throw new NotFoundException();
+            throw new NotFoundHttpException();
         }
 
         return new JsonResponse($data);
