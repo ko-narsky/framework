@@ -8,7 +8,7 @@ use Exception;
 use Konarsky\Contract\FormRequestInterface;
 use Konarsky\Exception\Form\RequiredValidationException;
 use Konarsky\Exception\Form\ValidationException;
-use Konarsky\HTTP\Form\Rule\UniqueRule;
+use Psr\Container\ContainerInterface;
 
 abstract class AbstractFormRequest implements FormRequestInterface
 {
@@ -17,7 +17,7 @@ abstract class AbstractFormRequest implements FormRequestInterface
     protected bool $skipEmptyValues = false;
 
    public function __construct(
-       private readonly UniqueRule $uniqueRule,
+       private readonly ContainerInterface $container,
        protected array $values,
    ) {
        foreach ($this->rules() as $rule) {
@@ -127,12 +127,7 @@ abstract class AbstractFormRequest implements FormRequestInterface
             }
 
             try {
-                if ($ruleNamespace === UniqueRule::class) {
-                    $this->uniqueRule->validate($value, $ruleOptions);
-                    continue;
-                }
-
-                (new $ruleNamespace())->validate($value, $ruleOptions);
+                $this->container->get($ruleNamespace)->validate($value, $ruleOptions);
             } catch (RequiredValidationException $e) {
                 $this->addError($attribute, $e->getMessage());
 
