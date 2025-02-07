@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Konarsky\HTTP\OpenApiValidator;
 
+use Konarsky\Exception\HTTP\BadRequestHttpException;
 use League\OpenAPIValidation\PSR7\Exception\Validation\InvalidBody;
 use League\OpenAPIValidation\PSR7\OperationAddress;
 use League\OpenAPIValidation\Schema\Exception\SchemaMismatch;
@@ -18,7 +19,7 @@ class UnipartValidator extends UnipartValidatorPsr
         if (preg_match('#^application/.*json$#', $this->contentType)) {
             $body = $message->getParsedBody();
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw InvalidBody::becauseBodyIsNotValidJson(json_last_error_msg(), $addr);
+                throw new BadRequestHttpException();
             }
         } else {
             $body = (string) $message->getParsedBody();
@@ -29,7 +30,7 @@ class UnipartValidator extends UnipartValidatorPsr
         try {
             $validator->validate($body, $schema);
         } catch (SchemaMismatch $e) {
-            throw InvalidBody::becauseBodyDoesNotMatchSchema($this->contentType, $addr, $e);
+            throw new BadRequestHttpException();
         }
     }
 }
