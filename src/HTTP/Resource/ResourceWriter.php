@@ -23,9 +23,9 @@ class ResourceWriter implements ResourceWriterInterface
     /**
      * @inheritDoc
      */
-    public function create(array $values): void
+    public function create(array $values): int
     {
-        $this->connection->insert($this->resourceName, $values);
+        return $this->connection->insert($this->resourceName, $values);
     }
 
     /**
