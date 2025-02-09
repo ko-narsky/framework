@@ -7,6 +7,7 @@ namespace Konarsky\HTTP;
 use Konarsky\Contract\DebugTagStorageInterface;
 use Konarsky\Contract\ErrorHandlerInterface;
 use Konarsky\Contract\ViewRendererInterface;
+use Konarsky\Exception\Resource\ResourceException;
 use Konarsky\HTTP\Enum\ContentTypes;
 use Throwable;
 
@@ -29,6 +30,10 @@ class ErrorHandler implements ErrorHandlerInterface
         $debugTag = $this->debugTagStorage->getTag();
 
         if ($this->contentType === ContentTypes::APPLICATION_JSON) {
+
+            if ($e instanceof ResourceException) {
+                return $e->getMessage();
+            }
 
             return json_encode([
                 'message' => $message,

@@ -9,6 +9,7 @@ use Konarsky\Contract\HttpKernelInterface;
 use Konarsky\Contract\HTTPRouterInterface;
 use Konarsky\Contract\LoggerInterface;
 use Konarsky\Exception\HTTP\HttpException;
+use Konarsky\Exception\Resource\ResourceException;
 use Konarsky\HTTP\Enum\ContentTypes;
 use Konarsky\HTTP\Response\CreateResponse;
 use Konarsky\HTTP\Response\DeleteResponse;
@@ -68,7 +69,7 @@ final class HttpKernel implements HttpKernelInterface
             if ($result instanceof PatchResponse) {
                 $this->response = $this->response->withStatus(200);
             }
-        } catch (HttpException $e) {
+        } catch (HttpException|ResourceException $e) {
             $this->response = $this->response->withHeader('Content-Type', $this->errorHandler->getContentType()->value)
                 ->withStatus($e->getStatusCode());
 
