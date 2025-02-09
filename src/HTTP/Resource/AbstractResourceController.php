@@ -2,6 +2,7 @@
 
 namespace Konarsky\HTTP\Resource;
 
+use Konarsky\Contract\DataBaseConnectionInterface;
 use Konarsky\Contract\EventDispatcherInterface;
 use Konarsky\Contract\FormRequestFactoryInterface;
 use Konarsky\Contract\ResourceDataFilterInterface;
@@ -29,6 +30,7 @@ abstract class AbstractResourceController
         protected FormRequestFactoryInterface $formRequestFactory,
         protected ResourceWriterInterface $resourceWriter,
         protected EventDispatcherInterface $eventDispatcher,
+        protected DataBaseConnectionInterface $connection
     ) {
         $this->resourceDataFilter
             ->setResourceName($this->getResourceName())
@@ -81,6 +83,11 @@ abstract class AbstractResourceController
      * @return array
      */
     abstract protected function getAccessibleFilters(): array;
+
+    protected function getRelationships(): array
+    {
+        return [];
+    }
 
     /**
      * @throws ForbiddenHttpException
@@ -167,7 +174,24 @@ abstract class AbstractResourceController
             throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
         }
 
-        $this->resourceWriter->create($form->getValues());
+        $insertId = $this->resourceWriter->create($form->getValues());
+
+        if (isset($this->request->getParsedBody()['relationships']) === false) {
+            return new CreateResponse();
+        }
+
+        $relationsRequest = $this->request->getParsedBody()['relationships'];
+        $filteredRelations = array_intersect_key($this->getRelationships(), array_flip(array_keys($relationsRequest)));
+
+        foreach ($filteredRelations as $name => $relation) {
+            $this->connection->insert(
+                $relation['table'],
+                [
+                    $relation['resourceKey'] => $insertId,
+                    current($relation['relationshipKey']) => $relationsRequest[$name]['data'][0][key($relation['relationshipKey'])],
+                ]
+            );
+        }
 
         return new CreateResponse();
     }
@@ -220,7 +244,7 @@ abstract class AbstractResourceController
         return new PatchResponse();
     }
 
-    public function actionDelete(string|int $id): DeleteResponse
+    public function actionDelete(string|int $id = null): DeleteResponse
     {
         $this->checkCallAvailability(ResourceActionTypesEnum::DELETE);
 

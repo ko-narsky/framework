@@ -23,7 +23,7 @@ final readonly class FormRequestFactory implements FormRequestFactoryInterface
     public function create(string $formClassName): FormRequestInterface
     {
         if (class_exists($formClassName) === true) {
-            return $this->container->get($formClassName, ['values' => $this->request->getParsedBody()]);
+            return $this->container->get($formClassName, ['values' => $this->request->getParsedBody()['attributes']]);
         }
 
         throw new LogicException('Класс формы ' . $formClassName . ' не существует');

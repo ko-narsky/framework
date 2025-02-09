@@ -10,9 +10,9 @@ interface ResourceWriterInterface
     /**
      * @param array $values
      *
-     * @return void
+     * @return int
      */
-    public function create(array $values): void;
+    public function create(array $values): int;
 
     /**
      * @param string|int $id

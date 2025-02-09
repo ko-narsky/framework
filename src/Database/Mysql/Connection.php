@@ -88,6 +88,10 @@ class Connection implements DataBaseConnectionInterface
         $statement = $this->connection->prepare($sql);
 
         foreach ($data as $key => $value) {
+            if (is_string($value) === true) {
+                $value = strtotime($value) === false ? $value :date('Y-m-d H:i:s',  strtotime($value));
+            }
+
             $statement->bindValue(":$key", $value);
         }
 
@@ -109,6 +113,10 @@ class Connection implements DataBaseConnectionInterface
         $statement = $this->connection->prepare($sql);
 
         foreach ($data as $key => $value) {
+            if (is_string($value) === true) {
+                $value = strtotime($value) === false ? $value :date('Y-m-d H:i:s',  strtotime($value));
+            }
+
             $statement->bindValue(":$key", $value);
         }
 

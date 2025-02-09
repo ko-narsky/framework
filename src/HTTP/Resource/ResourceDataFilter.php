@@ -70,7 +70,7 @@ class ResourceDataFilter implements ResourceDataFilterInterface
 
     private function buildQuery(array $condition): QueryBuilderInterface
     {
-        $fields = $this->resolveFields($condition['fields'] ?? []);
+        $fields = $this->resolveFields($condition['fields'] ?? '');
         $filters = $this->resolveFilters($condition['filter'] ?? []);
 
         $queryBuilder = $this->queryBuilderFactory->create();
@@ -86,13 +86,15 @@ class ResourceDataFilter implements ResourceDataFilterInterface
         return $queryBuilder;
     }
 
-    private function resolveFields(array $requestFields): array
+    private function resolveFields(string $requestFields): array
     {
         if (empty($requestFields) === true) {
             return $this->accessibleFields;
         }
 
-        return array_intersect($requestFields, $this->accessibleFields);
+        $requestFields = explode(',', $requestFields);
+
+        return array_values(array_intersect($requestFields, $this->accessibleFields));
     }
 
     private function resolveFilters(array $requestFilters): array
