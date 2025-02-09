@@ -8,19 +8,19 @@ use Konarsky\Contract\FormRequestFactoryInterface;
 use Konarsky\Contract\ResourceDataFilterInterface;
 use Konarsky\Contract\ResourceWriterInterface;
 use Konarsky\EventDispatcher\Message;
-use Konarsky\Exception\Base\NotFoundException;
 use Konarsky\Exception\HTTP\BadRequestHttpException;
 use Konarsky\Exception\HTTP\ForbiddenHttpException;
-use Konarsky\Exception\HTTP\NotFoundHttpException;
+use Konarsky\Exception\Resource\BadRequestResourceException;
+use Konarsky\Exception\Resource\ForbiddenResourceException;
+use Konarsky\Exception\Resource\NotFoundResourceException;
 use Konarsky\HTTP\Enum\FormActionsEnum;
 use Konarsky\HTTP\Enum\ResourceActionTypesEnum;
 use Konarsky\HTTP\Form\FormRequest;
 use Konarsky\HTTP\Response\CreateResponse;
 use Konarsky\HTTP\Response\DeleteResponse;
 use Konarsky\HTTP\Response\JsonResponse;
-use Konarsky\HTTP\Response\PatchResponse;
-use Konarsky\HTTP\Response\UpdateResponse;
 use Psr\Http\Message\ServerRequestInterface;
+use Throwable;
 
 abstract class AbstractResourceController
 {
@@ -95,7 +95,7 @@ abstract class AbstractResourceController
     private function checkCallAvailability(ResourceActionTypesEnum $actionType): void
     {
         if (in_array($actionType, $this->getAvailableActions()) === false) {
-            throw new ForbiddenHttpException();
+            throw new ForbiddenResourceException();
         }
     }
 
@@ -128,7 +128,7 @@ abstract class AbstractResourceController
         $data = $this->resourceDataFilter->filterAll($this->request->getQueryParams());
 
         if (empty($data) === true) {
-            throw new NotFoundHttpException();
+            throw new NotFoundResourceException();
         }
 
         return new JsonResponse($data);
@@ -154,7 +154,7 @@ abstract class AbstractResourceController
         $data = $this->resourceDataFilter->filterOne($id, $this->request->getQueryParams());
 
         if ($data === null) {
-            throw new NotFoundHttpException();
+            throw new NotFoundResourceException();
         }
 
         return new JsonResponse($data);
@@ -162,86 +162,102 @@ abstract class AbstractResourceController
 
     public function actionCreate(): CreateResponse
     {
-        $this->checkCallAvailability(ResourceActionTypesEnum::CREATE);
+        try {
+            $this->checkCallAvailability(ResourceActionTypesEnum::CREATE);
 
-        $form = $this->formRequestFactory->create($this->forms[ResourceActionTypesEnum::CREATE->value]);
+            $form = $this->formRequestFactory->create($this->forms[ResourceActionTypesEnum::CREATE->value]);
 
-        $this->eventDispatcher->trigger(FormActionsEnum::AFTER_FORM_CREATED->value, new Message($form));
+            $this->eventDispatcher->trigger(FormActionsEnum::AFTER_FORM_CREATED->value, new Message($form));
 
-        $form->validate();
+            $form->validate();
 
-        if (empty($form->getErrors()) === false) {
-            throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-        }
+            if (empty($form->getErrors()) === false) {
+                throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+            }
 
-        $insertId = $this->resourceWriter->create($form->getValues());
+            $insertId = $this->resourceWriter->create($form->getValues());
 
-        if (isset($this->request->getParsedBody()['relationships']) === false) {
+            if (isset($this->request->getParsedBody()['relationships']) === false) {
+                return new CreateResponse();
+            }
+
+            $relationsRequest = $this->request->getParsedBody()['relationships'];
+            $filteredRelations = array_intersect_key($this->getRelationships(), array_flip(array_keys($relationsRequest)));
+
+            foreach ($filteredRelations as $name => $relation) {
+                $this->connection->insert(
+                    $relation['table'],
+                    [
+                        $relation['resourceKey'] => $insertId,
+                        current($relation['relationshipKey']) => $relationsRequest[$name]['data'][0][key($relation['relationshipKey'])],
+                    ]
+                );
+            }
+
             return new CreateResponse();
+        } catch (Throwable) {
+            throw new BadRequestResourceException();
         }
-
-        $relationsRequest = $this->request->getParsedBody()['relationships'];
-        $filteredRelations = array_intersect_key($this->getRelationships(), array_flip(array_keys($relationsRequest)));
-
-        foreach ($filteredRelations as $name => $relation) {
-            $this->connection->insert(
-                $relation['table'],
-                [
-                    $relation['resourceKey'] => $insertId,
-                    current($relation['relationshipKey']) => $relationsRequest[$name]['data'][0][key($relation['relationshipKey'])],
-                ]
-            );
-        }
-
-        return new CreateResponse();
     }
 
-    public function actionUpdate(string|int $id): UpdateResponse
+    public function actionUpdate(string|int $id): CreateResponse
     {
-        $this->checkCallAvailability(ResourceActionTypesEnum::UPDATE);
+        try {
+            $this->checkCallAvailability(ResourceActionTypesEnum::UPDATE);
 
-        $form = $this->formRequestFactory->create($this->forms[ResourceActionTypesEnum::UPDATE->value]);
+            $form = $this->formRequestFactory->create($this->forms[ResourceActionTypesEnum::UPDATE->value]);
 
-        $this->eventDispatcher->trigger(FormActionsEnum::AFTER_FORM_CREATED->value, new Message($form));
+            $this->eventDispatcher->trigger(FormActionsEnum::AFTER_FORM_CREATED->value, new Message($form));
 
-        $form->validate();
+            $form->validate();
+
+            if (empty($form->getErrors()) === false) {
+                throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
+            }
+
+            if ($this->resourceDataFilter->filterOne($id, []) === null) {
+                throw new NotFoundResourceException();
+            }
+
+            $this->resourceWriter->update($id, $form->getValues());
+
+            return new CreateResponse();
+        } catch (NotFoundResourceException $e) {
+            throw $e;
+        } catch (Throwable) {
+            throw new BadRequestResourceException();
+        }
+    }
+
+    public function actionPatch(string|int $id): CreateResponse
+    {
+        try {
+            $this->checkCallAvailability(ResourceActionTypesEnum::PATCH);
+
+            $form = $this->formRequestFactory->create($this->forms[ResourceActionTypesEnum::PATCH->value]);
+
+            $form->setSkipEmptyValues();
+
+            $this->eventDispatcher->trigger(FormActionsEnum::AFTER_FORM_CREATED->value, new Message($form));
+
+            $form->validate();
 
         if (empty($form->getErrors()) === false) {
             throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
         }
 
-        if ($this->resourceDataFilter->filterOne($id, []) === null) {
-            throw new NotFoundHttpException();
+            if ($this->resourceDataFilter->filterOne($id, []) === null) {
+                throw new NotFoundResourceException();
+            }
+
+            $this->resourceWriter->patch($id, $form->getValues());
+
+            return new CreateResponse();
+        } catch (NotFoundResourceException $e) {
+            throw $e;
+        } catch (Throwable) {
+            throw new BadRequestResourceException();
         }
-
-        $this->resourceWriter->update($id, $form->getValues());
-
-        return new UpdateResponse();
-    }
-
-    public function actionPatch(string|int $id): PatchResponse
-    {
-        $this->checkCallAvailability(ResourceActionTypesEnum::PATCH);
-
-        $form = $this->formRequestFactory->create($this->forms[ResourceActionTypesEnum::PATCH->value]);
-
-        $form->setSkipEmptyValues();
-
-        $this->eventDispatcher->trigger(FormActionsEnum::AFTER_FORM_CREATED->value, new Message($form));
-
-        $form->validate();
-
-        if (empty($form->getErrors()) === false) {
-            throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
-        }
-
-        if ($this->resourceDataFilter->filterOne($id, []) === null) {
-            throw new NotFoundHttpException();
-        }
-
-        $this->resourceWriter->patch($id, $form->getValues());
-
-        return new PatchResponse();
     }
 
     public function actionDelete(string|int $id = null): DeleteResponse
@@ -249,7 +265,7 @@ abstract class AbstractResourceController
         $this->checkCallAvailability(ResourceActionTypesEnum::DELETE);
 
         if ($this->resourceDataFilter->filterOne($id, []) === null) {
-            throw new NotFoundHttpException();
+            throw new NotFoundResourceException();
         }
 
         $this->resourceWriter->delete($id);

@@ -6,6 +6,15 @@
 Формат основан на [стандарте формата CHANGELOG](https://keepachangelog.com/en/1.0.0/),
 и придерживается [правил версионирования](https://semver.org/spec/v2.0.0.html).
 
+## [ [3.0.0](https://github.com/ko-narsky/framework-new/releases/tag/3.0.0)] - 09.02.2025
+
+- Реализовано:
+  - Исключения для ресурсов
+- Изменено:
+  - Добавление возможности работы с relations для ресурсов
+
+## [ [2.0.0](https://github.com/ko-narsky/framework-new/releases/tag/2.0.0)] - 07.02.2025
+
 - Реализовано:
   - Фабрика Request
   - Фабрика ServerRequest
