@@ -7,6 +7,7 @@ use Konarsky\Contract\EventDispatcherInterface;
 use Konarsky\Contract\FormRequestFactoryInterface;
 use Konarsky\Contract\ResourceDataFilterInterface;
 use Konarsky\Contract\ResourceWriterInterface;
+use Konarsky\Database\QueryBuilderFactory;
 use Konarsky\EventDispatcher\Message;
 use Konarsky\Exception\HTTP\BadRequestHttpException;
 use Konarsky\Exception\HTTP\ForbiddenHttpException;
@@ -14,6 +15,7 @@ use Konarsky\Exception\Resource\BadRequestResourceException;
 use Konarsky\Exception\Resource\ForbiddenResourceException;
 use Konarsky\Exception\Resource\NotFoundResourceException;
 use Konarsky\HTTP\Enum\FormActionsEnum;
+use Konarsky\HTTP\Enum\RelationshipTypeEnum;
 use Konarsky\HTTP\Enum\ResourceActionTypesEnum;
 use Konarsky\HTTP\Form\FormRequest;
 use Konarsky\HTTP\Response\CreateResponse;
@@ -30,7 +32,8 @@ abstract class AbstractResourceController
         protected FormRequestFactoryInterface $formRequestFactory,
         protected ResourceWriterInterface $resourceWriter,
         protected EventDispatcherInterface $eventDispatcher,
-        protected DataBaseConnectionInterface $connection
+        protected DataBaseConnectionInterface $connection,
+        protected QueryBuilderFactory $queryBuilderFactory,
     ) {
         $this->resourceDataFilter
             ->setResourceName($this->getResourceName())
@@ -38,7 +41,8 @@ abstract class AbstractResourceController
             ->setAccessibleFilters($this->getAccessibleFilters());
 
         $this->resourceWriter
-            ->setResourceName($this->getResourceName());
+            ->setResourceName($this->getResourceName())
+            ->setRelationships($this->defineRelationships());
     }
 
     private array $forms = [
@@ -84,7 +88,7 @@ abstract class AbstractResourceController
      */
     abstract protected function getAccessibleFilters(): array;
 
-    protected function getRelationships(): array
+    protected function defineRelationships(): array
     {
         return [];
     }
@@ -182,16 +186,26 @@ abstract class AbstractResourceController
             }
 
             $relationsRequest = $this->request->getParsedBody()['relationships'];
-            $filteredRelations = array_intersect_key($this->getRelationships(), array_flip(array_keys($relationsRequest)));
+            $filteredRelations = array_intersect_key($this->defineRelationships(), array_flip(array_keys($relationsRequest)));
 
             foreach ($filteredRelations as $name => $relation) {
-                $this->connection->insert(
-                    $relation['table'],
-                    [
-                        $relation['resourceKey'] => $insertId,
-                        current($relation['relationshipKey']) => $relationsRequest[$name]['data'][0][key($relation['relationshipKey'])],
-                    ]
-                );
+
+                if ($relation['type'] === RelationshipTypeEnum::ONE_TO_MANY->value) {
+                    $query = $this->queryBuilderFactory->create();
+                    $query->select('*')->from($relation['target_table'])->where([current($relation['target_key']) =>  $relationsRequest[$name]['data'][0][key($relation['target_key'])]]);
+
+                    if ($this->connection->selectOne($query) === null) {
+                        throw new NotFoundResourceException();
+                    }
+
+                    $this->connection->insert(
+                        $relation['via_table'],
+                        [
+                            $relation['resource_key'] => $insertId,
+                            key($relation['target_key']) => $relationsRequest[$name]['data'][0][key($relation['target_key'])],
+                        ]
+                    );
+                }
             }
 
             return new CreateResponse();
