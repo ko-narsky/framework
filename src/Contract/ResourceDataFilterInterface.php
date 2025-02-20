@@ -88,5 +88,5 @@ interface ResourceDataFilterInterface
      * @throws NotFoundException
      *
      */
-    public function filterOne(int|string $id, array $condition): array|null;
+    public function filterOne(array $condition): array|null;
 }

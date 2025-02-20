@@ -59,12 +59,9 @@ class ResourceDataFilter implements ResourceDataFilterInterface
     /**
      * @inheritDoc
      */
-    public function filterOne(int|string $id, array $condition): array|null
+    public function filterOne(array $condition): array|null
     {
-        return $this->connection->selectOne(
-            $this->buildQuery($condition)
-                ->where(['id' => $id])
-        );
+        return $this->connection->selectOne($this->buildQuery($condition));
 
     }
 
