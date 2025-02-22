@@ -68,7 +68,7 @@ class ResourceDataFilter implements ResourceDataFilterInterface
         $result = $this->connection->select($this->buildQuery($condition));
 
         foreach ($result as &$item) {
-            $this->addExpands($item, $condition['expand'] ?? []);
+            $this->addExpands($item, $condition['expand'] ?? '');
         }
 
         return $result;
@@ -177,12 +177,20 @@ class ResourceDataFilter implements ResourceDataFilterInterface
             }
 
             if($relation['type'] === RelationshipTypeEnum::ONE_TO_MANY->value) {
-                $queryBuilder = $this->queryBuilderFactory->create();
-                $queryBuilder->select('*')
-                    ->from($relation['target_table'])
-                    ->where([$relation['target_key'] => $data[$relation['resource_key']]]);
 
-                $data['relationships'][$expand] = $this->connection->selectOne($queryBuilder);
+                $queryBuilder = $this->queryBuilderFactory->create();
+                $queryBuilder->select(key($relation['target_key']))
+                    ->from($relation['via_table'])
+                    ->where([$relation['resource_key'] => $data['id']]);
+
+                foreach ($this->connection->selectColumn($queryBuilder) as $column) {
+                    $queryBuilder = $this->queryBuilderFactory->create();
+                    $queryBuilder->select('*')
+                        ->from($relation['target_table'])
+                        ->where([current($relation['target_key']) => $column]);
+
+                    $data['relationships'][$expand][] = $this->connection->selectOne($queryBuilder);
+                }
             }
         }
     }
