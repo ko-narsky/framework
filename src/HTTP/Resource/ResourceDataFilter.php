@@ -6,12 +6,14 @@ use Konarsky\Contract\DataBaseConnectionInterface;
 use Konarsky\Contract\QueryBuilderInterface;
 use Konarsky\Contract\ResourceDataFilterInterface;
 use Konarsky\Database\QueryBuilderFactory;
+use Konarsky\HTTP\Enum\RelationshipTypeEnum;
 
 class ResourceDataFilter implements ResourceDataFilterInterface
 {
     private string $resourceName;
     private array $accessibleFields = [];
     private array $accessibleFilters = [];
+    private array $relationships;
 
     public function __construct(
         private readonly DataBaseConnectionInterface $connection,
@@ -51,9 +53,25 @@ class ResourceDataFilter implements ResourceDataFilterInterface
     /**
      * @inheritDoc
      */
+    public function setRelationships(array $relationships): static
+    {
+        $this->relationships = $relationships;
+
+        return $this;
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function filterAll(array $condition): array
     {
-        return $this->connection->select($this->buildQuery($condition));
+        $result = $this->connection->select($this->buildQuery($condition));
+
+        foreach ($result as &$item) {
+            $this->addExpands($item, $condition['expand'] ?? []);
+        }
+
+        return $result;
     }
 
     /**
@@ -61,8 +79,11 @@ class ResourceDataFilter implements ResourceDataFilterInterface
      */
     public function filterOne(array $condition): array|null
     {
-        return $this->connection->selectOne($this->buildQuery($condition));
+        $result =  $this->connection->selectOne($this->buildQuery($condition));
 
+        $this->addExpands($result, $condition['expand'] ?? '');
+
+        return $result;
     }
 
     private function buildQuery(array $condition): QueryBuilderInterface
@@ -71,7 +92,7 @@ class ResourceDataFilter implements ResourceDataFilterInterface
         $filters = $this->resolveFilters($condition['filter'] ?? []);
 
         $queryBuilder = $this->queryBuilderFactory->create();
-        $queryBuilder->select($fields)
+        $queryBuilder->select($fields[$this->resourceName])
             ->from($this->resourceName);
 
         foreach ($filters as $field => $filter) {
@@ -86,13 +107,26 @@ class ResourceDataFilter implements ResourceDataFilterInterface
     private function resolveFields(string $requestFields): array
     {
         if (empty($requestFields) === true) {
-            return $this->accessibleFields;
+            return [$this->resourceName => $this->accessibleFields];
         }
 
         $requestFields = explode(',', $requestFields);
+        $fields = [];
 
-        return array_values(array_intersect($requestFields, $this->accessibleFields));
+        foreach ($requestFields as $field) {
+            if (str_contains($field, '.') === false) {
+                $fields[$this->resourceName][] = $field;
+
+                continue;
+            }
+
+            [$relation, $column] = explode('.', $field, 2);
+            $fields[$relation][] = $column;
+        }
+
+        return $fields;
     }
+
 
     private function resolveFilters(array $requestFilters): array
     {
@@ -113,5 +147,43 @@ class ResourceDataFilter implements ResourceDataFilterInterface
             '$eq' => $queryBuilder->where([$field => $value]),
             default => null
         };
+    }
+
+    private function addExpands(array &$data, string $expands): void
+    {
+        if (empty($expands) === true) {
+            return;
+        }
+
+        $expands = explode(',', $expands);
+
+        foreach ($expands as $expand) {
+            $relation = $this->relationships[$expand] ?? [];
+
+            if ($relation === []) {
+                return;
+            }
+
+
+            if($relation['type'] === RelationshipTypeEnum::ONE_TO_ONE->value) {
+                $queryBuilder = $this->queryBuilderFactory->create();
+                $queryBuilder->select('*')
+                    ->from($relation['target_table'])
+                    ->where([$relation['target_key'] => $data[$relation['resource_key']]]);
+
+                $data['relationships'][$expand] = $this->connection->selectOne($queryBuilder);
+
+                continue;
+            }
+
+            if($relation['type'] === RelationshipTypeEnum::ONE_TO_MANY->value) {
+                $queryBuilder = $this->queryBuilderFactory->create();
+                $queryBuilder->select('*')
+                    ->from($relation['target_table'])
+                    ->where([$relation['target_key'] => $data[$relation['resource_key']]]);
+
+                $data['relationships'][$expand] = $this->connection->selectOne($queryBuilder);
+            }
+        }
     }
 }

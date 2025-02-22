@@ -38,7 +38,8 @@ abstract class AbstractResourceController
         $this->resourceDataFilter
             ->setResourceName($this->getResourceName())
             ->setAccessibleFields($this->getAccessibleFields())
-            ->setAccessibleFilters($this->getAccessibleFilters());
+            ->setAccessibleFilters($this->getAccessibleFilters())
+            ->setRelationships($this->defineRelationships());
 
         $this->resourceWriter
             ->setResourceName($this->getResourceName())
@@ -191,7 +192,7 @@ abstract class AbstractResourceController
             $filteredRelations = array_intersect_key($this->defineRelationships(), array_flip(array_keys($relationsRequest)));
 
             foreach ($filteredRelations as $name => $relation) {
-                $this->processRelation($relation, $relationsRequest[$name]['data'][0], $insertId);
+                $this->createRelation($relation, $relationsRequest[$name]['data'][0], $insertId);
             }
 
             return new CreateResponse();
@@ -309,7 +310,7 @@ abstract class AbstractResourceController
         return new DeleteResponse();
     }
 
-    private function processRelation(array $relation, array $relationData, int $insertId): void
+    private function createRelation(array $relation, array $relationData, int $insertId): void
     {
         if ($relation['type'] === RelationshipTypeEnum::ONE_TO_MANY->value) {
             $targetKey = key($relation['target_key']);
