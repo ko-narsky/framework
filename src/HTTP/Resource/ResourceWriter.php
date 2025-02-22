@@ -8,6 +8,7 @@ use Konarsky\Contract\ResourceWriterInterface;
 class ResourceWriter implements ResourceWriterInterface
 {
     private string $resourceName;
+    private array $relationships;
 
     public function __construct(
         private readonly DataBaseConnectionInterface $connection
@@ -16,6 +17,13 @@ class ResourceWriter implements ResourceWriterInterface
     public function setResourceName(string $name): static
     {
         $this->resourceName = $name;
+
+        return $this;
+    }
+
+    public function setRelationships(array $relationships): static
+    {
+        $this->relationships = $relationships;
 
         return $this;
     }

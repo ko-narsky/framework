@@ -6,6 +6,9 @@
 Формат основан на [стандарте формата CHANGELOG](https://keepachangelog.com/en/1.0.0/),
 и придерживается [правил версионирования](https://semver.org/spec/v2.0.0.html).
 
+- Реализовано:
+  - Возможность получать связные ресурсы в relations
+
 ## [ [2.0.0](https://github.com/ko-narsky/framework-new/releases/tag/2.0.0)] - 09.02.2025
 
 - Реализовано:

@@ -7,6 +7,7 @@ use Konarsky\Exception\Base\NotFoundException;
 interface ResourceWriterInterface
 {
     function setResourceName(string $name): static;
+    public function setRelationships(array $relationships): static;
     /**
      * @param array $values
      *

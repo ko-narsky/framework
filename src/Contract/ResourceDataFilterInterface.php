@@ -60,6 +60,13 @@ interface ResourceDataFilterInterface
      * ]
      * @throws NotFoundException
      */
+
+    /**
+     * @param array $relationships
+     * @return $this
+     */
+    public function setRelationships(array $relationships): static;
+
     public function filterAll(array $condition): array;
 
     /**
@@ -88,5 +95,5 @@ interface ResourceDataFilterInterface
      * @throws NotFoundException
      *
      */
-    public function filterOne(int|string $id, array $condition): array|null;
+    public function filterOne(array $condition): array|null;
 }

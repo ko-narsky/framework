@@ -7,6 +7,7 @@ use Konarsky\Contract\EventDispatcherInterface;
 use Konarsky\Contract\FormRequestFactoryInterface;
 use Konarsky\Contract\ResourceDataFilterInterface;
 use Konarsky\Contract\ResourceWriterInterface;
+use Konarsky\Database\QueryBuilderFactory;
 use Konarsky\EventDispatcher\Message;
 use Konarsky\Exception\HTTP\BadRequestHttpException;
 use Konarsky\Exception\HTTP\ForbiddenHttpException;
@@ -14,6 +15,7 @@ use Konarsky\Exception\Resource\BadRequestResourceException;
 use Konarsky\Exception\Resource\ForbiddenResourceException;
 use Konarsky\Exception\Resource\NotFoundResourceException;
 use Konarsky\HTTP\Enum\FormActionsEnum;
+use Konarsky\HTTP\Enum\RelationshipTypeEnum;
 use Konarsky\HTTP\Enum\ResourceActionTypesEnum;
 use Konarsky\HTTP\Form\FormRequest;
 use Konarsky\HTTP\Response\CreateResponse;
@@ -30,15 +32,18 @@ abstract class AbstractResourceController
         protected FormRequestFactoryInterface $formRequestFactory,
         protected ResourceWriterInterface $resourceWriter,
         protected EventDispatcherInterface $eventDispatcher,
-        protected DataBaseConnectionInterface $connection
+        protected DataBaseConnectionInterface $connection,
+        protected QueryBuilderFactory $queryBuilderFactory,
     ) {
         $this->resourceDataFilter
             ->setResourceName($this->getResourceName())
             ->setAccessibleFields($this->getAccessibleFields())
-            ->setAccessibleFilters($this->getAccessibleFilters());
+            ->setAccessibleFilters($this->getAccessibleFilters())
+            ->setRelationships($this->defineRelationships());
 
         $this->resourceWriter
-            ->setResourceName($this->getResourceName());
+            ->setResourceName($this->getResourceName())
+            ->setRelationships($this->defineRelationships());
     }
 
     private array $forms = [
@@ -84,7 +89,7 @@ abstract class AbstractResourceController
      */
     abstract protected function getAccessibleFilters(): array;
 
-    protected function getRelationships(): array
+    protected function defineRelationships(): array
     {
         return [];
     }
@@ -151,7 +156,9 @@ abstract class AbstractResourceController
     {
         $this->checkCallAvailability(ResourceActionTypesEnum::VIEW);
 
-        $data = $this->resourceDataFilter->filterOne($id, $this->request->getQueryParams());
+        $requestParams = $this->request->getQueryParams();
+        $requestParams['filter']['id'] = ['$eq' => $id];
+        $data = $this->resourceDataFilter->filterOne($requestParams);
 
         if ($data === null) {
             throw new NotFoundResourceException();
@@ -182,16 +189,10 @@ abstract class AbstractResourceController
             }
 
             $relationsRequest = $this->request->getParsedBody()['relationships'];
-            $filteredRelations = array_intersect_key($this->getRelationships(), array_flip(array_keys($relationsRequest)));
+            $filteredRelations = array_intersect_key($this->defineRelationships(), array_flip(array_keys($relationsRequest)));
 
             foreach ($filteredRelations as $name => $relation) {
-                $this->connection->insert(
-                    $relation['table'],
-                    [
-                        $relation['resourceKey'] => $insertId,
-                        current($relation['relationshipKey']) => $relationsRequest[$name]['data'][0][key($relation['relationshipKey'])],
-                    ]
-                );
+                $this->createRelation($relation, $relationsRequest[$name]['data'][0], $insertId);
             }
 
             return new CreateResponse();
@@ -215,7 +216,10 @@ abstract class AbstractResourceController
                 throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
             }
 
-            if ($this->resourceDataFilter->filterOne($id, []) === null) {
+            $requestParams = $this->request->getQueryParams();
+            $requestParams['filter']['id'] = ['$eq' => $id];
+
+            if ( $this->resourceDataFilter->filterOne($requestParams) === null) {
                 throw new NotFoundResourceException();
             }
 
@@ -242,11 +246,14 @@ abstract class AbstractResourceController
 
             $form->validate();
 
-        if (empty($form->getErrors()) === false) {
-            throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
-        }
+            if (empty($form->getErrors()) === false) {
+                throw new BadRequestHttpException(json_encode($form->getErrors(), JSON_UNESCAPED_UNICODE));
+            }
 
-            if ($this->resourceDataFilter->filterOne($id, []) === null) {
+            $requestParams = $this->request->getQueryParams();
+            $requestParams['filter']['id'] = ['$eq' => $id];
+
+            if ($this->resourceDataFilter->filterOne($requestParams) === null) {
                 throw new NotFoundResourceException();
             }
 
@@ -264,12 +271,65 @@ abstract class AbstractResourceController
     {
         $this->checkCallAvailability(ResourceActionTypesEnum::DELETE);
 
-        if ($this->resourceDataFilter->filterOne($id, []) === null) {
+        if ($id !== null) {
+            $requestParams = $this->request->getQueryParams();
+            $requestParams['filter']['id'] = ['$eq' => $id];
+
+            if ($this->resourceDataFilter->filterOne($requestParams) === null) {
+                throw new NotFoundResourceException();
+            }
+
+            $this->resourceWriter->delete($id);
+
+            return new DeleteResponse();
+        }
+
+        $conditions =  $this->resourceDataFilter->filterAll($this->request->getQueryParams());
+
+        if (empty($conditions) === true) {
             throw new NotFoundResourceException();
         }
 
-        $this->resourceWriter->delete($id);
+        foreach ($conditions as $condition) {
+            $record = $this->connection
+                ->selectOne(
+                    $this->queryBuilderFactory
+                        ->create()
+                        ->select('id')
+                        ->from($this->getResourceName())
+                        ->where($condition)
+                );
+
+            if ($record === null) {
+                throw new NotFoundResourceException();
+            }
+
+            $this->resourceWriter->delete($record['id']);
+        }
 
         return new DeleteResponse();
+    }
+
+    private function createRelation(array $relation, array $relationData, int $insertId): void
+    {
+        if ($relation['type'] === RelationshipTypeEnum::ONE_TO_MANY->value) {
+            $targetKey = key($relation['target_key']);
+            $query = $this->queryBuilderFactory->create()
+                ->select('*')
+                ->from($relation['target_table'])
+                ->where([current($relation['target_key']) => $relationData[$targetKey]]);
+
+            if ($this->connection->selectOne($query) === null) {
+                throw new NotFoundResourceException();
+            }
+
+            $this->connection->insert(
+                $relation['via_table'],
+                [
+                    $relation['resource_key'] => $insertId,
+                    key($relation['target_key']) => $relationData[key($relation['target_key'])],
+                ]
+            );
+        }
     }
 }
