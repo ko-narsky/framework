@@ -81,6 +81,10 @@ class ResourceDataFilter implements ResourceDataFilterInterface
     {
         $result =  $this->connection->selectOne($this->buildQuery($condition));
 
+        if ($result === null) {
+            return null;
+        }
+
         $this->addExpands($result, $condition['expand'] ?? '');
 
         return $result;
@@ -151,47 +155,57 @@ class ResourceDataFilter implements ResourceDataFilterInterface
 
     private function addExpands(array &$data, string $expands): void
     {
-        if (empty($expands) === true) {
+        if (empty($expands)) {
             return;
         }
 
         $expands = explode(',', $expands);
 
         foreach ($expands as $expand) {
-            $relation = $this->relationships[$expand] ?? [];
-
-            if ($relation === []) {
-                return;
-            }
-
-
-            if($relation['type'] === RelationshipTypeEnum::ONE_TO_ONE->value) {
-                $queryBuilder = $this->queryBuilderFactory->create();
-                $queryBuilder->select('*')
-                    ->from($relation['target_table'])
-                    ->where([$relation['target_key'] => $data[$relation['resource_key']]]);
-
-                $data['relationships'][$expand] = $this->connection->selectOne($queryBuilder);
-
+            $relation = $this->relationships[$expand] ?? null;
+            if ($relation === null) {
                 continue;
             }
 
-            if($relation['type'] === RelationshipTypeEnum::ONE_TO_MANY->value) {
+            if ($relation['type'] === RelationshipTypeEnum::ONE_TO_ONE->value) {
+                $data['relationships'][$expand] = $this->fetchOneToOne($relation, $data);
+                continue;
+            }
 
-                $queryBuilder = $this->queryBuilderFactory->create();
-                $queryBuilder->select(key($relation['target_key']))
-                    ->from($relation['via_table'])
-                    ->where([$relation['resource_key'] => $data['id']]);
-
-                foreach ($this->connection->selectColumn($queryBuilder) as $column) {
-                    $queryBuilder = $this->queryBuilderFactory->create();
-                    $queryBuilder->select('*')
-                        ->from($relation['target_table'])
-                        ->where([current($relation['target_key']) => $column]);
-
-                    $data['relationships'][$expand][] = $this->connection->selectOne($queryBuilder);
-                }
+            if ($relation['type'] === RelationshipTypeEnum::ONE_TO_MANY->value) {
+                $data['relationships'][$expand] = $this->fetchOneToMany($relation, $data);
             }
         }
+    }
+
+    private function fetchOneToOne(array $relation, array $data): ?array
+    {
+        $queryBuilder = $this->queryBuilderFactory->create();
+        $queryBuilder->select('*')
+            ->from($relation['target_table'])
+            ->where([$relation['target_key'] => $data[$relation['resource_key']]]);
+
+        return $this->connection->selectOne($queryBuilder);
+    }
+
+    private function fetchOneToMany(array $relation, array $data): array
+    {
+        $queryBuilder = $this->queryBuilderFactory->create();
+        $queryBuilder->select(key($relation['target_key']))
+            ->from($relation['via_table'])
+            ->where([$relation['resource_key'] => $data['id']]);
+
+        $result = [];
+
+        foreach ($this->connection->selectColumn($queryBuilder) as $column) {
+            $queryBuilder = $this->queryBuilderFactory->create();
+            $queryBuilder->select('*')
+                ->from($relation['target_table'])
+                ->where([current($relation['target_key']) => $column]);
+
+            $result[] = $this->connection->selectOne($queryBuilder);
+        }
+
+        return $result;
     }
 }
