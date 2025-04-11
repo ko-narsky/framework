@@ -2,14 +2,16 @@
 
 namespace Konarsky\HTTP\Authentication;
 
+use Firebase\JWT\BeforeValidException;
+use Firebase\JWT\ExpiredException;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use Firebase\JWT\SignatureInvalidException;
 use Konarsky\Configuration\ConfigurationInterface;
 use Konarsky\Contract\AuthenticationMiddlewareInterface;
 use Konarsky\Contract\UsersRepositoryInterface;
 use Konarsky\Exception\HTTP\UnauthorizedHttpException;
 use Psr\Http\Message\ServerRequestInterface;
-use Throwable;
 
 class JWTAuthenticationMiddleware implements AuthenticationMiddlewareInterface
 {
@@ -39,7 +41,7 @@ class JWTAuthenticationMiddleware implements AuthenticationMiddlewareInterface
             if ($this->usersRepository->isExistBy('uid', $decoded->sub) === false) {
                 throw new UnauthorizedHttpException();
             }
-        } catch (Throwable) {
+        } catch (ExpiredException | SignatureInvalidException | BeforeValidException) {
             throw new UnauthorizedHttpException();
         }
     }
