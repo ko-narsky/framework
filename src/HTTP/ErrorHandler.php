@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Konarsky\HTTP;
 
+use Closure;
 use Konarsky\Contract\DebugTagStorageInterface;
 use Konarsky\Contract\ErrorHandlerInterface;
 use Konarsky\Contract\ViewRendererInterface;
@@ -14,6 +15,8 @@ use Throwable;
 class ErrorHandler implements ErrorHandlerInterface
 {
     private ContentTypes $contentType = ContentTypes::TEXT_HTML;
+    private ?Closure $customHandle = null;
+
     public function __construct(
         private readonly DebugTagStorageInterface $debugTagStorage,
         private readonly ViewRendererInterface $viewRenderer,
@@ -23,6 +26,10 @@ class ErrorHandler implements ErrorHandlerInterface
 
     public function handle(Throwable $e): string
     {
+        if ($this->customHandle !== null) {
+            return ($this->customHandle)($e);
+        }
+
         $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
         $message = $e->getMessage();
         $trace = $e->getTraceAsString();
@@ -55,5 +62,10 @@ class ErrorHandler implements ErrorHandlerInterface
     public function getContentType(): ContentTypes
     {
         return $this->contentType;
+    }
+
+    public function setCustomHandle(Closure $handle): void
+    {
+        $this->customHandle = $handle;
     }
 }
