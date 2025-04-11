@@ -8,6 +8,7 @@
 
 - Реализовано:
   - Возможность получать связные ресурсы в relations
+  - Мидлвееры авторизации
 
 ## [ [2.0.0](https://github.com/ko-narsky/framework-new/releases/tag/2.0.0)] - 09.02.2025
 

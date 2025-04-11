@@ -23,7 +23,7 @@ class Configuration implements ConfigurationInterface
         return $this->resolveKey($key) !== null;
     }
 
-    private function resolveKey(string $keyPath): ?string
+    private function resolveKey(string $keyPath): mixed
     {
         $keys = explode('.', $keyPath);
         $result = $this->configs;
